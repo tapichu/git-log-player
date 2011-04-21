@@ -1,7 +1,12 @@
 (function($, undefined) {
 
+    var avatar = {
+        url: "https://secure.gravatar.com/avatar/",
+        w: 30,
+        h: 30
+    };
+    var padding = 2;
     var canvas = { x: 1200, y: 500 };
-    var cell = { x: 30, y: 30 };
     var offset = { x: 10, y: 10 };
 
     var render = function(commits) {
@@ -17,10 +22,11 @@
         });
 
         _.each(commits, function(commit) {
-            paper.image("https://secure.gravatar.com/avatar/" + commit.gravatar,
-                commit.time * cell.x + offset.x,
-                commit.space * cell.y + offset.y,
-                10, 10
+            paper.image(avatar.url + commit.gravatar,
+                commit.time * avatar.w * padding + offset.x,
+                commit.space * avatar.h * padding + offset.y,
+                avatar.w,
+                avatar.h
             );
         });
     };
