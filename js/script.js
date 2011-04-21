@@ -2,8 +2,8 @@
 
     var avatar = {
         url: 'https://secure.gravatar.com/avatar/',
-        w: 20,
-        h: 20
+        w: 25,
+        h: 25
     };
     var padding = 2;
     var canvas = { x: 1200, y: 500 };
@@ -12,9 +12,9 @@
     var world;
 
     var branchColor = [
-        { stroke: 'black', 'stroke-witdh': 10 },
-        { stroke: 'blue', 'stroke-witdh': 10 },
-        { stroke: 'green', 'stroke-witdh': 10 }
+        { stroke: 'black', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'butt' },
+        { stroke: 'blue', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' },
+        { stroke: 'green', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }
     ];
 
     var render = function(commits) {
@@ -72,7 +72,7 @@
     var createPath = function() {
         return _(arguments).chain()
             .map(function(move) {
-                return [ move[0], move[1] + ',' + move[2] ];
+                return [ move[0], move.slice(1).join(',') ];
             }).flatten().value().join('');
     };
 
