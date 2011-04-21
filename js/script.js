@@ -2,20 +2,27 @@
 
     var avatar = {
         url: 'https://secure.gravatar.com/avatar/',
-        w: 25,
-        h: 25
+        w: 15,
+        h: 15
     };
-    var padding = 2;
-    var canvas = { x: 1200, y: 500 };
+    var padding = 1.5;
+    var canvas = { x: 1200, y: 700 };
     var offset = { x: 10, y: 10 };
 
     var world;
 
-    var branchColor = [
-        { stroke: 'black', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'butt' },
-        { stroke: 'blue', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' },
-        { stroke: 'green', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }
-    ];
+    var branchColor = [];
+    for (var i = 0; i < 100; i++) {
+        branchColor[i] = {
+            stroke: 'rgb(' +
+                i * Math.random() * 100 % 255 + ',' +
+                i * Math.random() * 100 % 255 + ',' +
+                i * Math.random() * 100 % 255 + ')',
+            'stroke-width': 2,
+            'stroke-linejoin': 'round',
+            'stroke-linecap': 'round'
+        };
+    }
 
     var render = function(commits) {
         var paper = Raphael('canvas', canvas.x, canvas.y);
@@ -50,6 +57,8 @@
             // Draw avatar
             world.push(paper.image(info.image, info.x, info.y, info.w, info.h));
         });
+
+        moveViewport(-commits[0].time * avatar.w * padding);
     };
 
     var moveViewport = function(offset) {
@@ -78,7 +87,7 @@
 
     $(document).ready(function() {
         // Get commit history
-        $.getJSON('ajax/mrt.json', function(data) {
+        $.getJSON('ajax/sct.json', function(data) {
             render(data.commits);        
         });
 
