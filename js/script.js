@@ -9,6 +9,8 @@
     var canvas = { x: 1200, y: 500 };
     var offset = { x: 10, y: 10 };
 
+    var world;
+
     var branchColor = [
         { stroke: 'black', 'stroke-witdh': 10 },
         { stroke: 'blue', 'stroke-witdh': 10 },
@@ -17,6 +19,7 @@
 
     var render = function(commits) {
         var paper = Raphael('canvas', canvas.x, canvas.y);
+        world = paper.set();
 
         var frame = paper.path(createPath(
             ['M', 0, 0],
@@ -38,15 +41,20 @@
                         space: parent[2],
                     });
 
-                    paper.path(createPath(
+                    world.push(paper.path(createPath(
                         ['M', pInfo.x + avatar.w / 2, pInfo.y + avatar.h / 2],
                         ['L', info.x + avatar.w / 2, info.y + avatar.h / 2]
-                    )).attr(branchColor[commit.space]);
+                    )).attr(branchColor[commit.space]));
                 });
             }
             // Draw avatar
-            paper.image(info.image, info.x, info.y, info.w, info.h);
+            world.push(paper.image(info.image, info.x, info.y, info.w, info.h));
         });
+    };
+
+    var moveViewport = function(offset) {
+        //world.animate({ x: offset }, 1000);
+        world.translate(offset, 0);
     };
 
     // Commit utils
@@ -69,8 +77,21 @@
     };
 
     $(document).ready(function() {
+        // Get commit history
         $.getJSON('ajax/mrt.json', function(data) {
             render(data.commits);        
+        });
+
+        $(document).bind('keydown', function(e) {
+            var key = e.keyCode || e.which;
+            // Left
+            if (key == '37') {
+                moveViewport(50);
+            }
+            // Right
+            if (key == '39') {
+                moveViewport(-50);
+            }
         });
     });
 
