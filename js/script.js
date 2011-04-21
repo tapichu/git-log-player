@@ -2,12 +2,13 @@
 
     var avatar = {
         url: 'https://secure.gravatar.com/avatar/',
-        w: 15,
-        h: 15
+        w: 30,
+        h: 30
     };
-    var padding = 1.5;
+    var padding = 2;
     var canvas = { x: 1200, y: 700 };
     var offset = { x: 10, y: 10 };
+    var inflectionRadio = 0;
 
     var world;
 
@@ -48,9 +49,26 @@
                         space: parent[2],
                     });
 
+                    var line = ['L', info.x + avatar.w / 2, info.y + avatar.h / 2];
+                    if (commit.parents.length === 1) {
+                        // the first commit on a new branch
+
+                        if (commit.space !== parent[2]) {
+                            var radio = inflectionRadio;
+                            if(commit.space > parent[2]) {
+                                radio = -inflectionRadio;
+                            }
+                            line = ['C',
+                                pInfo.x + avatar.w / 2, info.y + avatar.h / 2 + radio,  // first inflec
+                                pInfo.x + avatar.w / 2 + inflectionRadio, info.y + avatar.h / 2,  // second inflec
+                                info.x + avatar.w / 2, info.y + avatar.h / 2    // end point
+                            ];
+                        }
+                    }
+
                     world.push(paper.path(createPath(
                         ['M', pInfo.x + avatar.w / 2, pInfo.y + avatar.h / 2],
-                        ['L', info.x + avatar.w / 2, info.y + avatar.h / 2]
+                        line
                     )).attr(branchColor[commit.space]));
                 });
             }
@@ -87,8 +105,8 @@
 
     $(document).ready(function() {
         // Get commit history
-        $.getJSON('ajax/sct.json', function(data) {
-            render(data.commits);        
+        $.getJSON('ajax/mrt.json', function(data) {
+            render(data.commits);
         });
 
         $(document).bind('keydown', function(e) {
