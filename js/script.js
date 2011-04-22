@@ -82,8 +82,8 @@
                         path.push(['L', info.cx, info.cy]);
                     }
  
-                    world.push(paper.path(createPath.apply(null, path)))
-                        .attr(branchColor[commit.space]);
+                    world.push(paper.path(createPath.apply(null, path))
+                        .attr(branchColor[commit.space]));
                 });
             }
             // Draw avatar
