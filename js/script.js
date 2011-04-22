@@ -30,8 +30,10 @@
     var render = function(commits) {
         var paper = Raphael('canvas', canvas.x, canvas.y);
         world = paper.set(),
-        world.push(avatars = paper.set(),
-                   branches = paper.set());
+        world.push(
+            avatars = paper.set(),
+            branches = paper.set()
+        );
 
         var frame = paper.path(createPath(
             ['M', 0, 0],
@@ -43,9 +45,9 @@
         });
 
         _.each(commits, function(commit) {
-            var info = commitInfo(commit);
             // Draw path
             if (commit.parents.length > 0) {
+                var info = commitInfo(commit);
                 _.each(commit.parents, function(parent) {
 
                     var pInfo = commitInfo({
