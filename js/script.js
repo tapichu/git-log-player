@@ -2,13 +2,13 @@
 
     var avatar = {
         url: 'https://secure.gravatar.com/avatar/',
-        w: 30,
-        h: 30
+        w: 15,
+        h: 15
     };
     var padding = 2;
     var canvas = { x: 1200, y: 700 };
     var offset = { x: 10, y: 10 };
-    var inflectionRadio = 0;
+    var borderRadio = 5;
 
     var world;
 
@@ -43,33 +43,47 @@
             // Draw path
             if (commit.parents.length > 0) {
                 _.each(commit.parents, function(parent) {
+
                     var pInfo = commitInfo({
                         id: parent[0],
                         time: parent[1],
                         space: parent[2],
                     });
 
-                    var line = ['L', info.x + avatar.w / 2, info.y + avatar.h / 2];
-                    if (commit.parents.length === 1) {
-                        // the first commit on a new branch
+                    var path = [['M', pInfo.cx, pInfo.cy]];
 
-                        if (commit.space !== parent[2]) {
-                            var radio = inflectionRadio;
-                            if(commit.space > parent[2]) {
-                                radio = -inflectionRadio;
-                            }
-                            line = ['C',
-                                pInfo.x + avatar.w / 2, info.y + avatar.h / 2 + radio,  // first inflec
-                                pInfo.x + avatar.w / 2 + inflectionRadio, info.y + avatar.h / 2,  // second inflec
-                                info.x + avatar.w / 2, info.y + avatar.h / 2    // end point
-                            ];
+                    // first commit on new branch
+                    if (commit.parents.length === 1 && commit.space !== parent[2]) {
+                        var radio = borderRadio;
+                        if(commit.space > parent[2]) {
+                            radio = -borderRadio;
                         }
-                    }
 
-                    world.push(paper.path(createPath(
-                        ['M', pInfo.x + avatar.w / 2, pInfo.y + avatar.h / 2],
-                        line
-                    )).attr(branchColor[commit.space]));
+                        path.push(
+                            ['L', pInfo.cx, info.cy + radio], 
+                            ['S', pInfo.cx, info.cy, pInfo.cx + borderRadio, info.cy],
+                            ['L', info.cx, info.cy]
+                        );
+
+                    // merge into parent branch
+                    } else if (commit.space !== parent[2]) {
+                        var radio = borderRadio;
+                        if(commit.space < parent[2]) {
+                            radio = -borderRadio;
+                        }
+                        path.push(
+                            ['L', info.cx - borderRadio, pInfo.cy], 
+                            ['S', info.cx, pInfo.cy, info.cx, pInfo.cy + radio],
+                            ['L', info.cx, info.cy]
+                        );
+
+                    // just another commit on same branch
+                    } else {
+                        path.push(['L', info.cx, info.cy]);
+                    }
+ 
+                    world.push(paper.path(createPath.apply(null, path)))
+                        .attr(branchColor[commit.space]);
                 });
             }
             // Draw avatar
@@ -86,13 +100,16 @@
 
     // Commit utils
     var commitInfo = function(commit) {
-        return {
+        var info = {
             image: avatar.url + commit.gravatar,
             x: commit.time * avatar.w * padding + offset.x,
             y: commit.space * avatar.h * padding + offset.y,
             w: avatar.w,
             h: avatar.h
         };
+        info.cx = info.x + avatar.w / 2;
+        info.cy = info.y + avatar.h / 2;
+        return info;
     };
 
     // Drawing utils
