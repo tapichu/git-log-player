@@ -6,7 +6,7 @@
         h: 15
     };
     var padding = 2;
-    var canvas = { x: 1200, y: 700 };
+    var canvas = { x: 820, y: 700 };
     var offset = { x: 10, y: 10 };
     var borderRadio = 5;
 
@@ -59,6 +59,7 @@
 
                     var path = [['M', pInfo.cx, pInfo.cy]];
                     var direction = 1;
+                    var branchSpace = commit.space;
 
                     // first commit on new branch
                     if (commit.parents.length === 1 && commit.space !== parent.space) {
@@ -77,6 +78,7 @@
                         path.push.apply(path, mergePath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
                         // Arrow
                         path.push.apply(path, arrowPath(info.cx, info.cy, -direction));
+                        branchSpace = parent.space;
 
                     // just another commit on same branch
                     } else {
@@ -84,7 +86,7 @@
                     }
 
                     branches.push(paper.path(createPath.apply(null, path))
-                        .attr(branchColor[commit.space]));
+                        .attr(branchColor[branchSpace]));
                 });
             }
             // Draw avatar
