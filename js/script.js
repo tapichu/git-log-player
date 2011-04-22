@@ -23,7 +23,8 @@
                 i * Math.random() * 100 % 255 + ')',
             'stroke-width': 2,
             'stroke-linejoin': 'round',
-            'stroke-linecap': 'round'
+            'stroke-linecap': 'round',
+            'stroke-opacity': 0
         };
     }
     var arrow = { w: 4, h: 10 };
@@ -59,7 +60,32 @@
         return paper;
     };
 
-    var render = function(paper, commits) {
+    var animate = function(commit, last) {
+        animate.running = true;
+        var animationTime = 100;
+
+        commit.avatar.animate({
+            '50%': { scale: 1.5, opacity: 0.5 },
+            '100%': { scale: 1, opacity: 1 }
+        }, animationTime);
+
+        if (commit.connections) {
+            _.each(commit.connections, function(connection) {
+                connection.path.animate({
+                    'stroke-opacity': 1
+                }, animationTime * (connection.next.time - commit.time), function() {
+                    // Stop animating when we merge back into a parent branch
+                    //if (connection.next.space === commit.space) {
+                       animate(connection.next, last);
+                    //}
+                });
+            });
+        } else if (last === commit) {
+            animate.running = false;
+        }
+    };
+
+    var render = function(paper, commits, timeOffset) {
         var currentDate = null;
         _.each(commits, function(commit) {
             var info = commitInfo(commit);
@@ -101,12 +127,24 @@
                         path.push(['L', info.cx, info.cy]);
                     }
 
-                    branches.push(paper.path(createPath.apply(null, path))
-                        .attr(branchColor[branchSpace]));
+                    var connection = {
+                        next: commit,
+                        path: paper.path(createPath.apply(null, path))
+                            .attr(branchColor[branchSpace])
+                    };
+                    if (parent.time >= timeOffset) {
+                        var parentCommit = commits[parent.time - timeOffset];
+                        parentCommit.connections = parentCommit.connections || [];
+                        parentCommit.connections.push(connection);
+                    }
+
+                    branches.push(connection.path);
                 });
             }
             // Draw avatar
-            avatars.push(paper.image(info.image, info.x, info.y, info.w, info.h));
+            commit.avatar = paper.image(info.image, info.x, info.y, info.w, info.h)
+                .attr({opacity: 0});
+            avatars.push(commit.avatar);
             // Draw date if it changed
             var cd = new Date(commit.date);
             cd = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
@@ -118,6 +156,8 @@
 
         avatars.toFront();
         moveViewport(-commits[0].time * avatar.w * padding);
+
+        animate(commits[0], commits[commits.length - 1]);
     };
 
     var moveViewport = function(offset) {
@@ -196,13 +236,13 @@
         dates.push(month);
     };
 
-    $(document).ready(function() {
-        // Get commit history
+    $(document).ready(function() { // Get commit history
         $.getJSON('ajax/mrt.json', function(data) {
-            render(renderBackdrop(), data.commits);
+            render(renderBackdrop(), data.commits, data.commits[0].time);
         });
 
         $(document).bind('keydown', function(e) {
+            if (animate.running) { return; }
             var key = e.keyCode || e.which;
             // Left
             if (key == '37') {
