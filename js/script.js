@@ -26,6 +26,7 @@
             'stroke-linecap': 'round'
         };
     }
+    var arrow = { w: 4, h: 10 };
 
     var render = function(commits) {
         var paper = Raphael('canvas', canvas.x, canvas.y);
@@ -45,9 +46,9 @@
         });
 
         _.each(commits, function(commit) {
+            var info = commitInfo(commit);
             // Draw path
             if (commit.parents.length > 0) {
-                var info = commitInfo(commit);
                 _.each(commit.parents, function(parent) {
 
                     var pInfo = commitInfo({
@@ -61,7 +62,7 @@
                     // first commit on new branch
                     if (commit.parents.length === 1 && commit.space !== parent[2]) {
                         var radio = borderRadio;
-                        if(commit.space > parent[2]) {
+                        if (commit.space > parent[2]) {
                             radio = -borderRadio;
                         }
 
@@ -70,17 +71,31 @@
                             ['S', pInfo.cx, info.cy, pInfo.cx + borderRadio, info.cy],
                             ['L', info.cx, info.cy]
                         );
+                        // Arrow
+                        path.push(
+                            ['M', info.x, info.cy,
+                                info.x - arrow.h, info.cy - arrow.w / 2,
+                                info.x - arrow.h, info.cy + arrow.w / 2],
+                            ['Z']
+                        );
 
                     // merge into parent branch
                     } else if (commit.space !== parent[2]) {
-                        var radio = borderRadio;
-                        if(commit.space < parent[2]) {
-                            radio = -borderRadio;
+                        var direction = 1;
+                        if (commit.space < parent[2]) {
+                            direction = -1;
                         }
                         path.push(
                             ['L', info.cx - borderRadio, pInfo.cy], 
-                            ['S', info.cx, pInfo.cy, info.cx, pInfo.cy + radio],
+                            ['S', info.cx, pInfo.cy, info.cx, pInfo.cy + borderRadio * direction],
                             ['L', info.cx, info.cy]
+                        );
+                        // Arrow
+                        path.push(
+                            ['M', info.cx, info.cy + avatar.h / 2 * -direction,
+                                info.cx - arrow.w / 2, info.cy + (avatar.h / 2 + arrow.h) * -direction,
+                                info.cx + arrow.w / 2, info.cy + (avatar.h / 2 + arrow.h) * -direction],
+                            ['Z']
                         );
 
                     // just another commit on same branch
