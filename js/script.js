@@ -65,10 +65,12 @@
         return paper;
     };
 
-    var animate = function(idx, commits) {
-        var commit = commits[idx];
-        if(!commit) { return; }
+    var animate = function(paper, context) {
+        var commit = context.commits[context.idx];
+        if (!commit) { return; }
         var delta = -avatar.w * padding;
+
+        processCommit(paper, commit, context);
 
         _.each(commit.parents, function(parent) {
             parent.connection.animate({
@@ -80,76 +82,78 @@
             opacity: 1
         }, timeUnit / speed, function() {
             moveViewport(delta, function() {
-                animate(idx + 1, commits);
+                context.idx += 1;
+                animate(paper, context);
             });
         });
     };
 
-    var render = function(paper, commits, timeOffset) {
-        var currentDate = null;
-        _.each(commits, function(commit) {
-            var info = commitInfo(commit);
-            // Draw path
-            if (commit.parents.length > 0) {
-                _.each(commit.parents, function(pData, pIdx) {
-                    var parent = commit.parents[pIdx] = {
-                        id: pData[0],
-                        time: pData[1],
-                        space: pData[2],
-                    };
-                    var pInfo = commitInfo(parent);
+    var processCommit = function(paper, commit, context) {
+        var info = commitInfo(commit);
+        // Draw path
+        if (commit.parents.length > 0) {
+            _.each(commit.parents, function(pData, pIdx) {
+                var parent = commit.parents[pIdx] = {
+                    id: pData[0],
+                    time: pData[1],
+                    space: pData[2],
+                };
+                var pInfo = commitInfo(parent, commit.time - parent.time);
 
-                    var path = [['M', pInfo.cx, pInfo.cy]];
-                    var direction = 1;
-                    var branchSpace = commit.space;
+                var path = [['M', pInfo.cx, pInfo.cy]];
+                var direction = 1;
+                var branchSpace = commit.space;
 
-                    // first commit on new branch
-                    if (commit.parents.length === 1 && commit.space !== parent.space) {
-                        if (commit.space > parent.space) {
-                            direction = -1;
-                        }
-                        path.push.apply(path, branchPath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
-                        // Arrow
-                        path.push.apply(path, arrowPath(info.x, info.cy));
+                // first commit on new branch
+                if (commit.parents.length === 1 && commit.space !== parent.space) {
+                    if (commit.space > parent.space) {
+                        direction = -1;
+                    }
+                    path.push.apply(path, branchPath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
+                    // Arrow
+                    path.push.apply(path, arrowPath(info.x, info.cy));
 
                     // merge into parent branch
-                    } else if (commit.space !== parent.space) {
-                        if (commit.space < parent.space) {
-                            direction = -1;
-                        }
-                        path.push.apply(path, mergePath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
-                        // Arrow
-                        path.push.apply(path, arrowPath(info.cx, info.cy, -direction));
-                        branchSpace = parent.space;
+                } else if (commit.space !== parent.space) {
+                    if (commit.space < parent.space) {
+                        direction = -1;
+                    }
+                    path.push.apply(path, mergePath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
+                    // Arrow
+                    path.push.apply(path, arrowPath(info.cx, info.cy, -direction));
+                    branchSpace = parent.space;
 
                     // just another commit on same branch
-                    } else {
-                        path.push(['L', info.cx, info.cy]);
-                    }
+                } else {
+                    path.push(['L', info.cx, info.cy]);
+                }
 
-                    parent.connection = paper.path(createPath.apply(null, path))
-                            .attr(branchColor[branchSpace]);
+                parent.connection = paper.path(createPath.apply(null, path))
+                    .attr(branchColor[branchSpace]).toBack();
 
-                    branches.push(parent.connection);
-                });
-            }
-            // Draw avatar
-            commit.avatar = paper.image(info.image, info.x, info.y, info.w, info.h)
-                .attr({opacity: hiddenOpacity});
-            avatars.push(commit.avatar);
-            // Draw date if it changed
-            var cd = new Date(commit.date);
-            cd = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
-            if (!currentDate || cd > currentDate) {
-                currentDate = cd;
-                drawDate(currentDate, info.cx, paper);
-            }
+                branches.push(parent.connection);
+            });
+        }
+        // Draw avatar
+        commit.avatar = paper.image(info.image, info.x, info.y, info.w, info.h)
+            .attr({opacity: hiddenOpacity});
+        avatars.push(commit.avatar);
+
+        // Draw date if it changed
+        var cd = new Date(commit.date);
+        cd = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
+        if (!context.currentDate || cd > context.currentDate) {
+            context.currentDate = cd;
+            drawDate(context.currentDate, info.cx, paper);
+        }
+    };
+
+    var render = function(paper, commits) {
+        animate(paper, {
+            idx: 0,
+            commits: commits,
+            currentDate: null
         });
-
-        avatars.toFront();
-        moveViewport(-commits[0].time * avatar.w * padding + canvas.w / 2);
-
-        animate(0, commits);
     };
 
     var moveViewport = function(offset, callback) {
@@ -158,10 +162,11 @@
     };
 
     // Commit utils
-    var commitInfo = function(commit) {
+    var commitInfo = function(commit, timeDelta) {
+        timeDelta = timeDelta || 0;
         var info = {
             image: avatar.url + commit.gravatar,
-            x: commit.time * avatar.w * padding + offset.x,
+            x: canvas.w / 2 + offset.x - (timeDelta * avatar.w * padding),
             y: commit.space * avatar.h * padding + offset.y,
             w: avatar.w,
             h: avatar.h
@@ -230,7 +235,7 @@
 
     $(document).ready(function() { // Get commit history
         $.getJSON('ajax/mrt.json', function(data) {
-            render(renderBackdrop(), data.commits, data.commits[0].time);
+            render(renderBackdrop(), data.commits);
         });
 
         $(document).bind('keydown', function(e) {
