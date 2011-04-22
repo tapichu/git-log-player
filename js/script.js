@@ -49,60 +49,40 @@
             var info = commitInfo(commit);
             // Draw path
             if (commit.parents.length > 0) {
-                _.each(commit.parents, function(parent) {
-
-                    var pInfo = commitInfo({
-                        id: parent[0],
-                        time: parent[1],
-                        space: parent[2],
-                    });
+                _.each(commit.parents, function(pData) {
+                    var parent = {
+                        id: pData[0],
+                        time: pData[1],
+                        space: pData[2],
+                    };
+                    var pInfo = commitInfo(parent);
 
                     var path = [['M', pInfo.cx, pInfo.cy]];
+                    var direction = 1;
 
                     // first commit on new branch
-                    if (commit.parents.length === 1 && commit.space !== parent[2]) {
-                        var radio = borderRadio;
-                        if (commit.space > parent[2]) {
-                            radio = -borderRadio;
-                        }
-
-                        path.push(
-                            ['L', pInfo.cx, info.cy + radio], 
-                            ['S', pInfo.cx, info.cy, pInfo.cx + borderRadio, info.cy],
-                            ['L', info.cx, info.cy]
-                        );
-                        // Arrow
-                        path.push(
-                            ['M', info.x, info.cy,
-                                info.x - arrow.h, info.cy - arrow.w / 2,
-                                info.x - arrow.h, info.cy + arrow.w / 2],
-                            ['Z']
-                        );
-
-                    // merge into parent branch
-                    } else if (commit.space !== parent[2]) {
-                        var direction = 1;
-                        if (commit.space < parent[2]) {
+                    if (commit.parents.length === 1 && commit.space !== parent.space) {
+                        if (commit.space > parent.space) {
                             direction = -1;
                         }
-                        path.push(
-                            ['L', info.cx - borderRadio, pInfo.cy], 
-                            ['S', info.cx, pInfo.cy, info.cx, pInfo.cy + borderRadio * direction],
-                            ['L', info.cx, info.cy]
-                        );
+                        path.push.apply(path, branchPath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
                         // Arrow
-                        path.push(
-                            ['M', info.cx, info.cy + avatar.h / 2 * -direction,
-                                info.cx - arrow.w / 2, info.cy + (avatar.h / 2 + arrow.h) * -direction,
-                                info.cx + arrow.w / 2, info.cy + (avatar.h / 2 + arrow.h) * -direction],
-                            ['Z']
-                        );
+                        path.push.apply(path, arrowPath(info.x, info.cy));
+
+                    // merge into parent branch
+                    } else if (commit.space !== parent.space) {
+                        if (commit.space < parent.space) {
+                            direction = -1;
+                        }
+                        path.push.apply(path, mergePath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
+                        // Arrow
+                        path.push.apply(path, arrowPath(info.cx, info.cy, -direction));
 
                     // just another commit on same branch
                     } else {
                         path.push(['L', info.cx, info.cy]);
                     }
- 
+
                     branches.push(paper.path(createPath.apply(null, path))
                         .attr(branchColor[commit.space]));
                 });
@@ -140,6 +120,43 @@
             .map(function(move) {
                 return [ move[0], move.slice(1).join(',') ];
             }).flatten().value().join('');
+    };
+
+    var branchPath = function(px, py, cx, cy, upDown) {
+        return [
+            ['L', px, cy + borderRadio * upDown],
+            ['S', px, cy, px + borderRadio, cy],
+            ['L', cx, cy]
+        ];
+    };
+
+    var mergePath = function(px, py, cx, cy, upDown) {
+        return [
+            ['L', cx - borderRadio, py],
+            ['S', cx, py, cx, py + borderRadio * upDown],
+            ['L', cx, cy]
+        ];
+    };
+
+    var arrowPath = function(x, y, upDown) {
+        var result = [];
+        // Horizontal
+        if (_.isUndefined(upDown)) {
+            result.push(
+                ['M', x, y, x - arrow.h, y - arrow.w / 2, x - arrow.h, y + arrow.w / 2],
+                ['Z']
+            );
+
+        // Vertical
+        } else {
+            result.push(
+                ['M', x, y + avatar.h / 2 * upDown,
+                    x - arrow.w / 2, y + (avatar.h / 2 + arrow.h) * upDown,
+                    x + arrow.w / 2, y + (avatar.h / 2 + arrow.h) * upDown],
+                ['Z']
+            );
+        }
+        return result;
     };
 
     $(document).ready(function() {
