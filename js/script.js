@@ -7,9 +7,10 @@
     };
     var padding = 2;
     var headerHeight = 30;
-    var canvas = { x: 820, y: 700 };
+    var canvas = { w: 820, h: 700 };
     var offset = { x: 10, y: 10 + headerHeight };
     var borderRadio = 5;
+    var hiddenOpacity = 0;
 
     // Sets
     var world, avatars, branches, dates;
@@ -24,7 +25,7 @@
             'stroke-width': 2,
             'stroke-linejoin': 'round',
             'stroke-linecap': 'round',
-            'stroke-opacity': 0
+            'stroke-opacity': hiddenOpacity
         };
     }
     var arrow = { w: 4, h: 10 };
@@ -33,8 +34,12 @@
         'SEP', 'OCT', 'NOV', 'DEC'
     ];
 
+    // Animations
+    var timeUnit = 200;
+    var speed = 1;
+
     var renderBackdrop = function() {
-        var paper = Raphael('canvas', canvas.x, canvas.y);
+        var paper = Raphael('canvas', canvas.w, canvas.h);
 
         world = paper.set(),
         world.push(
@@ -44,14 +49,14 @@
         );
 
         // Dates header
-        var header = paper.rect(0, 0, canvas.x, headerHeight)
+        var header = paper.rect(0, 0, canvas.w, headerHeight)
             .attr({ fill: '#CCC', stroke: 'none' });
 
         // Frame
         var frame = paper.path(createPath(
             ['M', 0, 0],
-            ['L', canvas.x, 0], ['L', canvas.x, canvas.y],
-            ['L', 0, canvas.y], ['L', 0, 0]
+            ['L', canvas.w, 0], ['L', canvas.w, canvas.h],
+            ['L', 0, canvas.h], ['L', 0, 0]
         )).attr({
             stroke: 'red',
             'stroke-witdh': 5
@@ -60,29 +65,24 @@
         return paper;
     };
 
-    var animate = function(commit, last) {
-        animate.running = true;
-        var animationTime = 100;
+    var animate = function(idx, commits) {
+        var commit = commits[idx];
+        if(!commit) { return; }
+        var delta = -avatar.w * padding;
+
+        _.each(commit.parents, function(parent) {
+            parent.connection.animate({
+                'stroke-opacity': 1
+            }, timeUnit / speed);
+        });
 
         commit.avatar.animate({
-            '50%': { scale: 1.5, opacity: 0.5 },
-            '100%': { scale: 1, opacity: 1 }
-        }, animationTime);
-
-        if (commit.connections) {
-            _.each(commit.connections, function(connection) {
-                connection.path.animate({
-                    'stroke-opacity': 1
-                }, animationTime * (connection.next.time - commit.time), function() {
-                    // Stop animating when we merge back into a parent branch
-                    //if (connection.next.space === commit.space) {
-                       animate(connection.next, last);
-                    //}
-                });
+            opacity: 1
+        }, timeUnit / speed, function() {
+            moveViewport(delta, function() {
+                animate(idx + 1, commits);
             });
-        } else if (last === commit) {
-            animate.running = false;
-        }
+        });
     };
 
     var render = function(paper, commits, timeOffset) {
@@ -91,8 +91,8 @@
             var info = commitInfo(commit);
             // Draw path
             if (commit.parents.length > 0) {
-                _.each(commit.parents, function(pData) {
-                    var parent = {
+                _.each(commit.parents, function(pData, pIdx) {
+                    var parent = commit.parents[pIdx] = {
                         id: pData[0],
                         time: pData[1],
                         space: pData[2],
@@ -127,23 +127,15 @@
                         path.push(['L', info.cx, info.cy]);
                     }
 
-                    var connection = {
-                        next: commit,
-                        path: paper.path(createPath.apply(null, path))
-                            .attr(branchColor[branchSpace])
-                    };
-                    if (parent.time >= timeOffset) {
-                        var parentCommit = commits[parent.time - timeOffset];
-                        parentCommit.connections = parentCommit.connections || [];
-                        parentCommit.connections.push(connection);
-                    }
+                    parent.connection = paper.path(createPath.apply(null, path))
+                            .attr(branchColor[branchSpace]);
 
-                    branches.push(connection.path);
+                    branches.push(parent.connection);
                 });
             }
             // Draw avatar
             commit.avatar = paper.image(info.image, info.x, info.y, info.w, info.h)
-                .attr({opacity: 0});
+                .attr({opacity: hiddenOpacity});
             avatars.push(commit.avatar);
             // Draw date if it changed
             var cd = new Date(commit.date);
@@ -155,14 +147,14 @@
         });
 
         avatars.toFront();
-        moveViewport(-commits[0].time * avatar.w * padding);
+        moveViewport(-commits[0].time * avatar.w * padding + canvas.w / 2);
 
-        animate(commits[0], commits[commits.length - 1]);
+        animate(0, commits);
     };
 
-    var moveViewport = function(offset) {
-        //world.animate({ x: offset }, 1000);
+    var moveViewport = function(offset, callback) {
         world.translate(offset, 0);
+        if (callback) { callback(); }
     };
 
     // Commit utils
@@ -242,7 +234,6 @@
         });
 
         $(document).bind('keydown', function(e) {
-            if (animate.running) { return; }
             var key = e.keyCode || e.which;
             // Left
             if (key == '37') {
