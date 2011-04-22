@@ -6,13 +6,13 @@
         h: 15
     };
     var padding = 2;
+    var headerHeight = 30;
     var canvas = { x: 820, y: 700 };
-    var offset = { x: 10, y: 10 };
+    var offset = { x: 10, y: 10 + headerHeight };
     var borderRadio = 5;
 
-    var world;
-    var avatars;
-    var branches;
+    // Sets
+    var world, avatars, branches, dates;
 
     var branchColor = [];
     for (var i = 0; i < 100; i++) {
@@ -27,15 +27,26 @@
         };
     }
     var arrow = { w: 4, h: 10 };
+    var months = [
+        'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG',
+        'SEP', 'OCT', 'NOV', 'DEC'
+    ];
 
-    var render = function(commits) {
+    var renderBackdrop = function() {
         var paper = Raphael('canvas', canvas.x, canvas.y);
+
         world = paper.set(),
         world.push(
             avatars = paper.set(),
-            branches = paper.set()
+            branches = paper.set(),
+            dates = paper.set()
         );
 
+        // Dates header
+        var header = paper.rect(0, 0, canvas.x, headerHeight)
+            .attr({ fill: '#CCC', stroke: 'none' });
+
+        // Frame
         var frame = paper.path(createPath(
             ['M', 0, 0],
             ['L', canvas.x, 0], ['L', canvas.x, canvas.y],
@@ -45,6 +56,11 @@
             'stroke-witdh': 5
         });
 
+        return paper;
+    };
+
+    var render = function(paper, commits) {
+        var currentDate = null;
         _.each(commits, function(commit) {
             var info = commitInfo(commit);
             // Draw path
@@ -91,6 +107,21 @@
             }
             // Draw avatar
             avatars.push(paper.image(info.image, info.x, info.y, info.w, info.h));
+            // Draw date if it changed
+            var cd = new Date(commit.date);
+            cd = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
+            if (!currentDate || cd > currentDate) {
+                currentDate = cd;
+                var date = paper.text(
+                    info.cx, headerHeight * 3 / 7, cd.getDate()
+                ).attr({ fill: 'black', font: '12px Arial', 'font-weight': 'bold' });
+                dates.push(date);
+
+                var month = paper.text(
+                    info.cx, headerHeight * 5 / 7, months[cd.getMonth()]
+                ).attr({ fill: 'black', font: '6px Arial' });
+                dates.push(month);
+            }
         });
 
         avatars.toFront();
@@ -164,7 +195,7 @@
     $(document).ready(function() {
         // Get commit history
         $.getJSON('ajax/mrt.json', function(data) {
-            render(data.commits);
+            render(renderBackdrop(), data.commits);
         });
 
         $(document).bind('keydown', function(e) {
