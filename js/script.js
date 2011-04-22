@@ -112,15 +112,7 @@
             cd = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
             if (!currentDate || cd > currentDate) {
                 currentDate = cd;
-                var date = paper.text(
-                    info.cx, headerHeight * 3 / 7, cd.getDate()
-                ).attr({ fill: 'black', font: '12px Arial', 'font-weight': 'bold' });
-                dates.push(date);
-
-                var month = paper.text(
-                    info.cx, headerHeight * 5 / 7, months[cd.getMonth()]
-                ).attr({ fill: 'black', font: '6px Arial' });
-                dates.push(month);
+                drawDate(currentDate, info.cx, paper);
             }
         });
 
@@ -190,6 +182,18 @@
             );
         }
         return result;
+    };
+
+    var drawDate = function(date, x, paper) {
+        var day = paper.text(
+            x, headerHeight * 3 / 7, date.getDate()
+        ).attr({ fill: 'black', font: '12px Arial', 'font-weight': 'bold' });
+        dates.push(day);
+
+        var month = paper.text(
+            x, headerHeight * 5 / 7, months[date.getMonth()]
+        ).attr({ fill: 'black', font: '6px Arial' });
+        dates.push(month);
     };
 
     $(document).ready(function() {
