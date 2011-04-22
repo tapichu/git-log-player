@@ -11,6 +11,8 @@
     var borderRadio = 5;
 
     var world;
+    var avatars;
+    var branches;
 
     var branchColor = [];
     for (var i = 0; i < 100; i++) {
@@ -27,7 +29,9 @@
 
     var render = function(commits) {
         var paper = Raphael('canvas', canvas.x, canvas.y);
-        world = paper.set();
+        world = paper.set(),
+        world.push(avatars = paper.set(),
+                   branches = paper.set());
 
         var frame = paper.path(createPath(
             ['M', 0, 0],
@@ -82,14 +86,15 @@
                         path.push(['L', info.cx, info.cy]);
                     }
  
-                    world.push(paper.path(createPath.apply(null, path))
+                    branches.push(paper.path(createPath.apply(null, path))
                         .attr(branchColor[commit.space]));
                 });
             }
             // Draw avatar
-            world.push(paper.image(info.image, info.x, info.y, info.w, info.h));
+            avatars.push(paper.image(info.image, info.x, info.y, info.w, info.h));
         });
 
+        avatars.toFront();
         moveViewport(-commits[0].time * avatar.w * padding);
     };
 
