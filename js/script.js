@@ -265,6 +265,14 @@
             if (key == '39') {
                 moveCamera(avatar.w * padding.w);
             }
+            // Increase speed (plus)
+            if ((key == '107' || key == '187') && animate.running) {
+                speed = speed * 1.5;
+            }
+            // Decrease speed (minus)
+            if ((key == '109' || key == '189') && animate.running) {
+                speed = speed / 1.5;
+            }
         });
     });
 
