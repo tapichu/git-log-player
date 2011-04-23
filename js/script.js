@@ -70,6 +70,12 @@
 
     var animate = function(paper, context) {
         animate.running = true;
+        animate.paused = false;
+        animate.callback = function() {
+            context.idx += 1;
+            animate(paper, context);
+        };
+
         var commit = context.commits[context.idx];
         if (!commit) {
             animate.running = false;
@@ -90,8 +96,9 @@
         }, timeUnit / speed, function() {
             moveCamera(avatar.w * padding.w);
             moveViewport(function() {
-                context.idx += 1;
-                animate(paper, context);
+                if (!animate.paused) {
+                    animate.callback();
+                }
             });
         });
     };
@@ -167,7 +174,7 @@
 
     var moveCamera = function(delta, callback) {
         camera += delta;
-        if (!animate.running) {
+        if (!animate.running || animate.paused) {
             moveViewport(callback);
         }
     };
@@ -262,16 +269,24 @@
                 moveCamera(-avatar.w * padding.w);
             }
             // Right
-            if (key == '39') {
+            else if (key == '39') {
                 moveCamera(avatar.w * padding.w);
             }
             // Increase speed (plus)
-            if ((key == '107' || key == '187') && animate.running) {
+            else if ((key == '107' || key == '187') && animate.running) {
                 speed = speed * 1.5;
             }
             // Decrease speed (minus)
-            if ((key == '109' || key == '189') && animate.running) {
+            else if ((key == '109' || key == '189') && animate.running) {
                 speed = speed / 1.5;
+            }
+            // Play / Pause
+            else if (key == '32' && animate.running) {
+                if (animate.paused) {
+                    animate.callback();
+                } else {
+                    animate.paused = true;
+                }
             }
         });
     });
