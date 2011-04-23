@@ -5,7 +5,7 @@
         w: 15,
         h: 15
     };
-    var padding = 2;
+    var padding = { w: 2, h: 2 };
     var headerHeight = 30;
     var canvas = { w: 820, h: 700 };
     var offset = { x: 10, y: 10 + headerHeight };
@@ -38,6 +38,9 @@
     var timeUnit = 200;
     var speed = 1;
 
+    // Camera
+    var camera = 0;
+
     var renderBackdrop = function() {
         var paper = Raphael('canvas', canvas.w, canvas.h);
 
@@ -66,9 +69,13 @@
     };
 
     var animate = function(paper, context) {
+        animate.running = true;
         var commit = context.commits[context.idx];
-        if (!commit) { return; }
-        var delta = -avatar.w * padding;
+        if (!commit) {
+            animate.running = false;
+            return;
+        }
+        var delta = -avatar.w * padding.w;
 
         processCommit(paper, commit, context);
 
@@ -81,7 +88,8 @@
         commit.avatar.animate({
             opacity: 1
         }, timeUnit / speed, function() {
-            moveViewport(delta, function() {
+            moveCamera(avatar.w * padding.w);
+            moveViewport(function() {
                 context.idx += 1;
                 animate(paper, context);
             });
@@ -149,6 +157,7 @@
     };
 
     var render = function(paper, commits) {
+        moveCamera(commits[0].time * avatar.w * padding.w - canvas.w / 2);
         animate(paper, {
             idx: 0,
             commits: commits,
@@ -156,18 +165,26 @@
         });
     };
 
-    var moveViewport = function(offset, callback) {
-        world.translate(offset, 0);
+    var moveCamera = function(delta, callback) {
+        camera += delta;
+        if (!animate.running) {
+            moveViewport(callback);
+        }
+    };
+
+    var moveViewport = function(callback) {
+        var delta = camera - moveViewport.camera || 0;
+        moveViewport.camera = camera;
+        world.translate(-delta, 0);
         if (callback) { callback(); }
     };
 
     // Commit utils
-    var commitInfo = function(commit, timeDelta) {
-        timeDelta = timeDelta || 0;
+    var commitInfo = function(commit) {
         var info = {
             image: avatar.url + commit.gravatar,
-            x: canvas.w / 2 + offset.x - (timeDelta * avatar.w * padding),
-            y: commit.space * avatar.h * padding + offset.y,
+            x: commit.time * avatar.w * padding.w + offset.x - camera,
+            y: commit.space * avatar.h * padding.h + offset.y,
             w: avatar.w,
             h: avatar.h
         };
@@ -242,11 +259,11 @@
             var key = e.keyCode || e.which;
             // Left
             if (key == '37') {
-                moveViewport(50);
+                moveCamera(-avatar.w * padding.w);
             }
             // Right
             if (key == '39') {
-                moveViewport(-50);
+                moveCamera(avatar.w * padding.w);
             }
         });
     });
