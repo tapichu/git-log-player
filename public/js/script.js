@@ -41,6 +41,9 @@
     // Camera
     var camera = 0;
 
+    // GitHub data
+    var repo = {};
+
     var renderBackdrop = function() {
         var paper = Raphael('canvas', canvas.w, canvas.h);
 
@@ -257,9 +260,23 @@
         dates.push(month);
     };
 
-    $(document).ready(function() { // Get commit history
-        $.getJSON('ajax/mrt.json', function(data) {
-            render(renderBackdrop(), data.commits);
+    $(document).ready(function() {
+        // Get commit history
+        $('#go').click(function(e) {
+            e.preventDefault();
+            repo.url = $('#repo').val();
+
+            if (repo.url && repo.url.length > 0) {
+                $.getJSON('proxy?path=/' + repo.url + '/network_meta', function(meta) {
+                    repo.meta = meta;
+                    console.log('Dates: ', meta.dates.length);
+
+                    $.getJSON('proxy?path=/' + repo.url + '/network_data_chunk?nethash=' +
+                              meta.nethash + '&start=0&end=' + (meta.dates.length - 1), function(chunk) {
+                        render(renderBackdrop(), chunk.commits);
+                    });
+                });
+            }
         });
 
         $(document).bind('keydown', function(e) {
