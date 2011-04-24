@@ -260,25 +260,44 @@
         dates.push(month);
     };
 
-    $(document).ready(function() {
+    // UI related functions
+
+    var initRepoControls = function() {
+        $('.input_param').focusin(function(e) {
+            e.preventDefault();
+            if ($(this).val() === 'user/repo') {
+                $(this).val('');
+            }
+        });
+        $('.input_param').focusout(function(e) {
+            e.preventDefault();
+            if ($(this).val() === '') {
+                $(this).val('user/repo');
+            }
+        });
         // Get commit history
-        $('#go').click(function(e) {
+        $('#play').click(function(e) {
             e.preventDefault();
             repo.url = $('#repo').val();
 
             if (repo.url && repo.url.length > 0) {
                 $.getJSON('proxy?path=/' + repo.url + '/network_meta', function(meta) {
                     repo.meta = meta;
-                    console.log('Dates: ', meta.dates.length);
-
-                    $.getJSON('proxy?path=/' + repo.url + '/network_data_chunk?nethash=' +
-                              meta.nethash + '&start=0&end=' + (meta.dates.length - 1), function(chunk) {
-                        render(renderBackdrop(), chunk.commits);
-                    });
+                    startAnimation(repo.url, repo.meta.nethash, repo.meta.dates.length - 1);
                 });
             }
         });
+    };
 
+    var startAnimation = function(url, nethash, numCommits) {
+        // TODO: do this in chunks
+        $.getJSON('proxy?path=/' + url + '/network_data_chunk?nethash=' +
+                  nethash + '&start=0&end=' + numCommits, function(chunk) {
+            render(renderBackdrop(), chunk.commits);
+        });
+    };
+
+    var initKeyboardControls = function() {
         $(document).bind('keydown', function(e) {
             var key = e.keyCode || e.which;
             // Left
@@ -306,6 +325,11 @@
                 }
             }
         });
+    };
+
+    $(document).ready(function() {
+        initRepoControls();
+        initKeyboardControls();
     });
 
 }(jQuery))
