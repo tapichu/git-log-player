@@ -248,6 +248,7 @@ input {
 
 #canvas {
     width: auto;
+    padding: 5px 10px 5px 10px;
 }
 
 

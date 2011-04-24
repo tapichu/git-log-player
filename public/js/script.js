@@ -5,7 +5,7 @@
         w: 15,
         h: 15
     };
-    var padding = { w: 2, h: 2 };
+    var padding = { w: 2, h: 1.5 };
     var headerHeight = 30;
     var canvas = { w: 820, h: 700 };
     var offset = { x: 10, y: 10 + headerHeight };
@@ -54,6 +54,10 @@
             dates = paper.set()
         );
 
+        // Cavas background
+        var background = paper.rect(0, 0, canvas.w, canvas.h)
+            .attr({ fill: '#F2F2F2', stroke: 'none' });
+
         // Dates header
         var header = paper.rect(0, 0, canvas.w, headerHeight)
             .attr({ fill: '#CCC', stroke: 'none' });
@@ -64,7 +68,7 @@
             ['L', canvas.w, 0], ['L', canvas.w, canvas.h],
             ['L', 0, canvas.h], ['L', 0, 0]
         )).attr({
-            stroke: 'red',
+            stroke: '#BBB',
             'stroke-witdh': 5
         });
 
@@ -147,14 +151,17 @@
                 }
 
                 parent.connection = paper.path(createPath.apply(null, path))
-                    .attr(branchColor[branchSpace]).toBack();
+                    .attr(branchColor[branchSpace]);
+
+                // Parent avatar to front
+                context.commits[parent.time].avatar.toFront();
 
                 branches.push(parent.connection);
             });
         }
         // Draw avatar
         commit.avatar = paper.image(info.image, info.x, info.y, info.w, info.h)
-            .attr({opacity: hiddenOpacity});
+            .attr({ opacity: hiddenOpacity });
         avatars.push(commit.avatar);
 
         // Draw date if it changed
@@ -262,6 +269,13 @@
 
     // UI related functions
 
+    var initCanvas = function() {
+        var $canvas = $('#canvas');
+        canvas.w = $canvas.width();
+        canvas.h = $(window).height() - $('body').height() -
+            parseInt($canvas.css('paddingTop').replace('px', ''), 10);
+    };
+
     var initRepoControls = function() {
         $('.input_param').focusin(function(e) {
             e.preventDefault();
@@ -328,6 +342,7 @@
     };
 
     $(document).ready(function() {
+        initCanvas();
         initRepoControls();
         initKeyboardControls();
     });
