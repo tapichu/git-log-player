@@ -30,7 +30,17 @@
             </div>
         </div>
         <div id="canvas"></div>
-        <div id="footer"></div>
-        <div id="controls"></div>
+        <div id="playback_controls" class="auto">
+            <div class="pad left">
+                <input type="button" id="pause" value="Pause" class="button">
+                <input type="button" id="rewind" value="<<" class="button">
+                <input type="button" id="forward" value=">>" class="button">
+            </div>
+            <div class="pad right">
+                <input type="button" id="slower" value="Slower" class="button">
+                <input type="button" id="faster" value="Faster" class="button">
+            </div>
+        </div>
+        <div id="bottom_edge"></div>
     </body>
 </html>

@@ -179,6 +179,10 @@ h1, h2, h3, h4, h5, h6 { font-weight: bold; }
     float: right;
     text-align: right;
 }
+.left {
+    float: left;
+    text-align: left;
+}
 
 .button {
     display: inline-block;
@@ -251,6 +255,39 @@ input {
     padding: 5px 10px 5px 10px;
 }
 
+#playback_controls {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    width: 98%;
+    font-weight: bold;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-top: 1px solid #000;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    margin: 5px 1% 0 1%;
+    color: #000000;
+    text-shadow: 1px 1px 1px #FFFFFF;
+    -moz-border-radius-topleft: 6px;
+    -moz-border-radius-topright: 6px;
+    -webkit-border-top-left-radius: 6px;
+    -webkit-border-top-right-radius: 6px;
+    -webkit-box-shadow: 0px -2px 3px rgba(0, 0, 0, 0.75);
+    -moz-box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.75);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    z-index: 100;
+}
+.pad {
+    padding: 1ex;
+}
+#bottom_edge {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+    height: 35px;
+}
 
 /**
  * Non-semantic helper classes: please define your styles before this section.

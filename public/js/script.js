@@ -5,7 +5,7 @@
         w: 15,
         h: 15
     };
-    var padding = { w: 2, h: 1.5 };
+    var padding = { w: 2, h: 1.75 };
     var headerHeight = 30;
     var canvas = { w: 820, h: 700 };
     var offset = { x: 10, y: 10 + headerHeight };
@@ -311,33 +311,88 @@
         });
     };
 
+    var controls = {
+        moveLeft: function() {
+            moveCamera(-avatar.w * padding.w * 2);
+        },
+        moveRight: function() {
+            moveCamera(avatar.w * padding.w * 2);
+        },
+        increaseSpeed: function(factor) {
+            factor = factor || 1.5;
+            speed = speed * factor;
+        },
+        decreaseSpeed: function(factor) {
+            factor = factor || 1.5;
+            speed = speed / factor;
+        },
+        togglePlay: function() {
+            if (animate.paused) {
+                animate.callback();
+            } else {
+                animate.paused = true;
+            }
+        }
+    };
+
     var initKeyboardControls = function() {
         $(document).bind('keydown', function(e) {
             var key = e.keyCode || e.which;
             // Left
             if (key == '37') {
-                moveCamera(-avatar.w * padding.w);
+                controls.moveLeft();
             }
             // Right
             else if (key == '39') {
-                moveCamera(avatar.w * padding.w);
+                controls.moveRight();
             }
             // Increase speed (plus)
             else if ((key == '107' || key == '187') && animate.running) {
-                speed = speed * 1.5;
+                controls.increaseSpeed();
             }
             // Decrease speed (minus)
             else if ((key == '109' || key == '189') && animate.running) {
-                speed = speed / 1.5;
+                controls.decreaseSpeed();
             }
             // Play / Pause
             else if (key == '32' && animate.running) {
-                if (animate.paused) {
-                    animate.callback();
-                } else {
-                    animate.paused = true;
-                }
+                controls.togglePlay();
             }
+        });
+    };
+
+    var initToolbarControls = function() {
+        var $playbackControls = $('#playback_controls').slideUp('slow');
+        $playbackControls.mouseleave(function() {
+            $playbackControls.slideUp('slow');
+        });
+        $('#bottom_edge').mouseenter(function() {
+            $playbackControls.slideDown('slow');
+        });
+
+        $('#pause').click(function(e) {
+            e.preventDefault();
+            if (animate.running) {
+                controls.togglePlay();
+                var $this = $(this);
+                $this.val() === 'Pause' ? $this.val('Play') : $this.val('Pause');
+            }
+        });
+        $('#rewind').click(function(e) {
+            e.preventDefault();
+            controls.moveLeft();
+        });
+        $('#forward').click(function(e) {
+            e.preventDefault();
+            controls.moveRight();
+        });
+        $('#slower').click(function(e) {
+            e.preventDefault();
+            controls.decreaseSpeed();
+        });
+        $('#faster').click(function(e) {
+            e.preventDefault();
+            controls.increaseSpeed();
         });
     };
 
@@ -345,6 +400,7 @@
         initCanvas();
         initRepoControls();
         initKeyboardControls();
+        initToolbarControls();
     });
 
 }(jQuery))
