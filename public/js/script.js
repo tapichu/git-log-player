@@ -13,10 +13,10 @@
     var hiddenOpacity = 0;
 
     // Sets
-    var world, avatars, branches, dates;
+    var world, avatars, branches, dates, visible = [];
 
     var branchColor = [];
-    for (var i = 0; i < 100; i++) {
+    for (var i = 0; i < 1000; i++) {
         branchColor[i] = {
             stroke: 'rgb(' +
                 i * Math.random() * 100 % 255 + ',' +
@@ -91,6 +91,7 @@
         var delta = -avatar.w * padding.w;
 
         processCommit(paper, commit, context);
+        visible.push(commit);
 
         _.each(commit.parents, function(parent) {
             parent.connection.animate({
@@ -169,7 +170,7 @@
         cd = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
         if (!context.currentDate || cd > context.currentDate) {
             context.currentDate = cd;
-            drawDate(context.currentDate, info.cx, paper);
+            drawDate(context.currentDate, info.cx, commit.time, paper);
         }
     };
 
@@ -192,7 +193,22 @@
     var moveViewport = function(callback) {
         var delta = camera - moveViewport.camera || 0;
         moveViewport.camera = camera;
+
         world.translate(-delta, 0);
+
+        var minTime = (camera - 10) / (avatar.w * padding.w);
+        var maxTime = minTime + canvas.w / (avatar.w * padding.w);
+
+        _.each(visible, function(commit) {
+            var notVisible = commit.time < minTime || commit.time > maxTime;
+            if(notVisible) {
+                if(commit.avatar) { commit.avatar.remove(); }
+                _.each(commit.parents, function(parent) {
+                    parent.connection.remove(); 
+                });
+            }
+        });
+
         if (callback) { callback(); }
     };
 
@@ -255,7 +271,7 @@
         return result;
     };
 
-    var drawDate = function(date, x, paper) {
+    var drawDate = function(date, x, time, paper) {
         var day = paper.text(
             x, headerHeight * 3 / 7, date.getDate()
         ).attr({ fill: 'black', font: '12px Arial', 'font-weight': 'bold' });
@@ -265,6 +281,14 @@
             x, headerHeight * 5 / 7, months[date.getMonth()]
         ).attr({ fill: 'black', font: '6px Arial' });
         dates.push(month);
+
+        visible.push({
+            time: time,
+            parents: [
+                { connection: day },
+                { connection: month },
+            ]
+        });
     };
 
     // UI related functions
