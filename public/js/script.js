@@ -361,12 +361,26 @@
         });
     };
 
+    var resetTimeout = function($element, key) {
+        key = key || 'timeoutId';
+        if (!_.isUndefined($element.data(key))) {
+            clearTimeout($element.data(key));
+            $element.data(key, undefined);
+        }
+    };
+
     var initToolbarControls = function() {
         var $playbackControls = $('#playback_controls').slideUp('slow');
         $playbackControls.mouseleave(function() {
-            $playbackControls.slideUp('slow');
+            $playbackControls.data('timeoutId', setTimeout(function() {
+                $playbackControls.slideUp('slow');
+            }, 1000));
+        });
+        $playbackControls.mouseenter(function() {
+            resetTimeout($playbackControls);
         });
         $('#bottom_edge').mouseenter(function() {
+            resetTimeout($playbackControls);
             $playbackControls.slideDown('slow');
         });
 
@@ -403,4 +417,4 @@
         initToolbarControls();
     });
 
-}(jQuery))
+}(jQuery));
