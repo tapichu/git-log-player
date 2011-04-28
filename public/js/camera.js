@@ -30,6 +30,7 @@ window.camera = (function(_, undefined) {
                     parent.connection.remove(); 
                 });
             }
+            // TODO: we're not cleaning up the visible array
         });
 
         if (callback) { callback(); }

@@ -16,7 +16,7 @@ window.commits = (function(_, undefined) {
         return info;
     };
 
-    var processCommit = function(paper, commit, context) {
+    var processCommit = function(commit, context) {
         var info = commitInfo(commit);
         // Draw path
         if (commit.parents.length > 0) {
@@ -56,7 +56,7 @@ window.commits = (function(_, undefined) {
                     path.push(['L', info.cx, info.cy]);
                 }
 
-                parent.connection = paper.path(paths.create.apply(null, path))
+                parent.connection = canvas.get().path(paths.create.apply(null, path))
                     .attr(branchStyles[branchSpace]);
 
                 // Parent avatar to front
@@ -66,7 +66,7 @@ window.commits = (function(_, undefined) {
             });
         }
         // Draw avatar
-        commit.avatar = paper.image(info.image, info.x, info.y, info.w, info.h)
+        commit.avatar = canvas.get().image(info.image, info.x, info.y, info.w, info.h)
             .attr({ opacity: hiddenOpacity });
         canvas.sets().avatars.push(commit.avatar);
 
@@ -83,8 +83,8 @@ window.commits = (function(_, undefined) {
         info: function(commit) {
             return commitInfo(commit);
         },
-        process: function(paper, commit, context) {
-            return processCommit(paper, commit, context);
+        process: function(commit, context) {
+            return processCommit(commit, context);
         }
     };
 

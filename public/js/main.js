@@ -18,21 +18,28 @@
     // GitHub data
     var repo = {};
 
-    var animate = window.animate = function(paper, context) {
+    var render = function() {
+        canvas.drawBackdrop();
+        camera.move(repo.commits[0].time * dimensions.cell.w - dimensions.canvas.w / 2);
+        animate({ idx: 0, currentDate: null });
+    };
+
+    var animate = window.animate = function(context) {
         animate.running = true;
         animate.paused = false;
         animate.callback = function() {
             context.idx += 1;
-            animate(paper, context);
+            animate(context);
         };
 
-        var commit = context.commits[context.idx];
+        var commit = repo.commits[context.idx];
         if (!commit) {
             animate.running = false;
             return;
         }
 
-        commits.process(paper, commit, context);
+        context.commits = repo.commits;
+        commits.process(commit, context);
         canvas.visible().push(commit);
 
         _.each(commit.parents, function(parent) {
@@ -53,19 +60,59 @@
         });
     };
 
-    var render = function(paper, commits) {
-        camera.move(commits[0].time * dimensions.cell.w - dimensions.canvas.w / 2);
-        animate(paper, {
-            idx: 0,
-            commits: commits,
-            currentDate: null
+    // Get repository metadata from GitHub
+    var getRepoMeta = function(url) {
+        $.getJSON('proxy?path=/' + url + '/network_meta', function(meta) {
+            repo.meta = meta;
+            startAnimation(url, meta.nethash, meta.dates.length - 1);
         });
     };
 
-    // UI related functions
+    // Get the commits from GitHub and start the animation
+    var startAnimation = function(url, nethash, numCommits) {
+        // TODO: do this in chunks
+        $.getJSON('proxy?path=/' + url + '/network_data_chunk?nethash=' +
+                  nethash + '&start=0&end=' + numCommits, function(chunk) {
+            repo.commits = chunk.commits;
+            render();
+        });
+    };
 
+    var resetTimeout = function($element, key) {
+        key = key || 'timeoutId';
+        if (!_.isUndefined($element.data(key))) {
+            clearTimeout($element.data(key));
+            $element.data(key, undefined);
+        }
+    };
+
+    // Control playback and the camera
+    var controls = {
+        moveLeft: function() {
+            camera.move(-dimensions.cell.w * 2);
+        },
+        moveRight: function() {
+            camera.move(dimensions.cell.w * 2);
+        },
+        faster: function() {
+            animations.faster();
+        },
+        slower: function() {
+            animations.slower();
+        },
+        togglePlay: function() {
+            if (animate.paused) {
+                animate.callback();
+            } else {
+                animate.paused = true;
+            }
+        }
+    };
+
+    // UI related functions
     var initCanvas = function() {
         var $canvas = $('#canvas');
+        // TODO: recalculate when window is resized
         dimensions.canvas = {
             w: $canvas.width(),
             h: $(window).height() - $('body').height() -
@@ -92,37 +139,9 @@
             repo.url = $('#repo').val();
 
             if (repo.url && repo.url.length > 0) {
-                $.getJSON('proxy?path=/' + repo.url + '/network_meta', function(meta) {
-                    repo.meta = meta;
-                    startAnimation(repo.url, repo.meta.nethash, repo.meta.dates.length - 1);
-                });
+                getRepoMeta(repo.url);
             }
         });
-    };
-
-    var startAnimation = function(url, nethash, numCommits) {
-        // TODO: do this in chunks
-        $.getJSON('proxy?path=/' + url + '/network_data_chunk?nethash=' +
-                  nethash + '&start=0&end=' + numCommits, function(chunk) {
-            canvas.drawBackdrop();
-            render(canvas.get(), chunk.commits);
-        });
-    };
-
-    var controls = {
-        moveLeft: function() {
-            camera.move(-dimensions.cell.w * 2);
-        },
-        moveRight: function() {
-            camera.move(dimensions.cell.w * 2);
-        },
-        togglePlay: function() {
-            if (animate.paused) {
-                animate.callback();
-            } else {
-                animate.paused = true;
-            }
-        }
     };
 
     var initKeyboardControls = function() {
@@ -138,25 +157,17 @@
             }
             // Increase speed (plus)
             else if ((key == '107' || key == '187') && animate.running) {
-                animations.faster();
+                controls.faster();
             }
             // Decrease speed (minus)
             else if ((key == '109' || key == '189') && animate.running) {
-                animations.slower();
+                controls.slower();
             }
             // Play / Pause
             else if (key == '32' && animate.running) {
                 controls.togglePlay();
             }
         });
-    };
-
-    var resetTimeout = function($element, key) {
-        key = key || 'timeoutId';
-        if (!_.isUndefined($element.data(key))) {
-            clearTimeout($element.data(key));
-            $element.data(key, undefined);
-        }
     };
 
     var initToolbarControls = function() {
@@ -192,14 +203,15 @@
         });
         $('#slower').click(function(e) {
             e.preventDefault();
-            animations.slower();
+            controls.slower();
         });
         $('#faster').click(function(e) {
             e.preventDefault();
-            animations.faster();
+            controls.faster();
         });
     };
 
+    // Initialize
     $(document).ready(function() {
         initCanvas();
         initRepoControls();
