@@ -1,5 +1,10 @@
 (function($, undefined) {
 
+    var months = [
+        'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG',
+        'SEP', 'OCT', 'NOV', 'DEC'
+    ];
+
     var dimensions = {
         header: { h: 30 },
         padding: { w: 2, h: 1.75 },
@@ -25,37 +30,48 @@
         day: { fill: 'black', font: '12px Arial', 'font-weight': 'bold' },
         month: { fill: 'black', font: '6px Arial' }
     };
+    var createColors = function(num) {
+        var colors = [];
+        for (var i = 0; i < num; i++) {
+            colors[i] = {
+                stroke: 'rgb(' +
+                    i * Math.random() * 100 % 255 + ',' +
+                    i * Math.random() * 100 % 255 + ',' +
+                    i * Math.random() * 100 % 255 + ')',
+                'stroke-width': 2,
+                'stroke-linejoin': 'round',
+                'stroke-linecap': 'round',
+                'stroke-opacity': styles.hiddenOpacity
+            };
+        }
+        return colors;
+    };
+    styles.branchColors = createColors(1000);
+
+    var animations = {
+        timeUnit: 200,
+        speed: 1,
+        delta: 1.5,
+        duration: function() {
+            return this.timeUnit / this.speed;
+        },
+        faster: function(factor) {
+            this.speed = this.speed * this.delta;
+        },
+        slower: function(factor) {
+            this.speed = this.speed / this.delta;
+        }
+    };
 
     // Sets
     var world, avatars, branches, dates, visible = [];
-
-    var branchColor = [];
-    for (var i = 0; i < 1000; i++) {
-        branchColor[i] = {
-            stroke: 'rgb(' +
-                i * Math.random() * 100 % 255 + ',' +
-                i * Math.random() * 100 % 255 + ',' +
-                i * Math.random() * 100 % 255 + ')',
-            'stroke-width': 2,
-            'stroke-linejoin': 'round',
-            'stroke-linecap': 'round',
-            'stroke-opacity': styles.hiddenOpacity
-        };
-    }
-    var months = [
-        'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG',
-        'SEP', 'OCT', 'NOV', 'DEC'
-    ];
-
-    // Animations
-    var timeUnit = 200;
-    var speed = 1;
 
     // Camera
     var camera = 0;
 
     // GitHub data
     var repo = {};
+
 
     var renderBackdrop = function() {
         var paper = Raphael('canvas', dimensions.canvas.w, dimensions.canvas.h);
@@ -105,12 +121,12 @@
         _.each(commit.parents, function(parent) {
             parent.connection.animate({
                 'stroke-opacity': 1
-            }, timeUnit / speed);
+            }, animations.duration());
         });
 
         commit.avatar.animate({
             opacity: 1
-        }, timeUnit / speed, function() {
+        }, animations.duration(), function() {
             moveCamera(dimensions.cell.w);
             moveViewport(function() {
                 if (!animate.paused) {
@@ -161,7 +177,7 @@
                 }
 
                 parent.connection = paper.path(createPath.apply(null, path))
-                    .attr(branchColor[branchSpace]);
+                    .attr(styles.branchColors[branchSpace]);
 
                 // Parent avatar to front
                 context.commits[parent.time].avatar.toFront();
@@ -356,14 +372,6 @@
         moveRight: function() {
             moveCamera(dimensions.cell.w * 2);
         },
-        increaseSpeed: function(factor) {
-            factor = factor || 1.5;
-            speed = speed * factor;
-        },
-        decreaseSpeed: function(factor) {
-            factor = factor || 1.5;
-            speed = speed / factor;
-        },
         togglePlay: function() {
             if (animate.paused) {
                 animate.callback();
@@ -386,11 +394,11 @@
             }
             // Increase speed (plus)
             else if ((key == '107' || key == '187') && animate.running) {
-                controls.increaseSpeed();
+                animations.faster();
             }
             // Decrease speed (minus)
             else if ((key == '109' || key == '189') && animate.running) {
-                controls.decreaseSpeed();
+                animations.slower();
             }
             // Play / Pause
             else if (key == '32' && animate.running) {
@@ -440,11 +448,11 @@
         });
         $('#slower').click(function(e) {
             e.preventDefault();
-            controls.decreaseSpeed();
+            animations.slower();
         });
         $('#faster').click(function(e) {
             e.preventDefault();
-            controls.increaseSpeed();
+            animations.faster();
         });
     };
 
