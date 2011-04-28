@@ -30,23 +30,7 @@
         day: { fill: 'black', font: '12px Arial', 'font-weight': 'bold' },
         month: { fill: 'black', font: '6px Arial' }
     };
-    var createColors = function(num) {
-        var colors = [];
-        for (var i = 0; i < num; i++) {
-            colors[i] = {
-                stroke: 'rgb(' +
-                    i * Math.random() * 100 % 255 + ',' +
-                    i * Math.random() * 100 % 255 + ',' +
-                    i * Math.random() * 100 % 255 + ')',
-                'stroke-width': 2,
-                'stroke-linejoin': 'round',
-                'stroke-linecap': 'round',
-                'stroke-opacity': styles.hiddenOpacity
-            };
-        }
-        return colors;
-    };
-    styles.branchColors = createColors(1000);
+    styles.branchStyles = util.createBranchStyles(1000);
 
     var animations = {
         timeUnit: 200,
@@ -176,7 +160,7 @@
                 }
 
                 parent.connection = paper.path(createPath.apply(null, path))
-                    .attr(styles.branchColors[branchSpace]);
+                    .attr(styles.branchStyles[branchSpace]);
 
                 // Parent avatar to front
                 context.commits[parent.time].avatar.toFront();
