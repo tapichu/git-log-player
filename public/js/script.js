@@ -1,16 +1,30 @@
 (function($, undefined) {
 
-    var avatar = {
-        url: 'https://secure.gravatar.com/avatar/',
-        w: 15,
-        h: 15
+    var dimensions = {
+        header: { h: 30 },
+        padding: { w: 2, h: 1.75 },
+        avatar: { w: 15, h: 15 },
+        arrow: { w: 4, h: 10 },
+        borderRadius: 5
     };
-    var padding = { w: 2, h: 1.75 };
-    var headerHeight = 30;
-    var canvas = { w: 820, h: 700 };
-    var offset = { x: 10, y: 10 + headerHeight };
-    var borderRadio = 5;
-    var hiddenOpacity = 0;
+    _.extend(dimensions, {
+        offset: { x: 10, y: 10 + dimensions.header.h },
+        cell: {
+            w: dimensions.avatar.w * dimensions.padding.w,
+            h: dimensions.avatar.h * dimensions.padding.h
+        },
+        day: { h: dimensions.header.h * 3 / 7 },
+        month: { h: dimensions.header.h * 5 / 7 }
+    });
+
+    var styles = {
+        hiddenOpacity: 0,
+        background: { fill: '#F2F2F2', stroke: 'none' },
+        header: { fill: '#CCC', stroke: 'none' },
+        frame: { stroke: '#BBB', 'stroke-width': 1 },
+        day: { fill: 'black', font: '12px Arial', 'font-weight': 'bold' },
+        month: { fill: 'black', font: '6px Arial' }
+    };
 
     // Sets
     var world, avatars, branches, dates, visible = [];
@@ -25,10 +39,9 @@
             'stroke-width': 2,
             'stroke-linejoin': 'round',
             'stroke-linecap': 'round',
-            'stroke-opacity': hiddenOpacity
+            'stroke-opacity': styles.hiddenOpacity
         };
     }
-    var arrow = { w: 4, h: 10 };
     var months = [
         'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG',
         'SEP', 'OCT', 'NOV', 'DEC'
@@ -45,7 +58,7 @@
     var repo = {};
 
     var renderBackdrop = function() {
-        var paper = Raphael('canvas', canvas.w, canvas.h);
+        var paper = Raphael('canvas', dimensions.canvas.w, dimensions.canvas.h);
 
         world = paper.set(),
         world.push(
@@ -55,22 +68,19 @@
         );
 
         // Cavas background
-        var background = paper.rect(0, 0, canvas.w, canvas.h)
-            .attr({ fill: '#F2F2F2', stroke: 'none' });
+        var background = paper.rect(0, 0, dimensions.canvas.w, dimensions.canvas.h)
+            .attr(styles.background);
 
         // Dates header
-        var header = paper.rect(0, 0, canvas.w, headerHeight)
-            .attr({ fill: '#CCC', stroke: 'none' });
+        var header = paper.rect(0, 0, dimensions.canvas.w, dimensions.header.h)
+            .attr(styles.header);
 
         // Frame
         var frame = paper.path(createPath(
             ['M', 0, 0],
-            ['L', canvas.w, 0], ['L', canvas.w, canvas.h],
-            ['L', 0, canvas.h], ['L', 0, 0]
-        )).attr({
-            stroke: '#BBB',
-            'stroke-witdh': 5
-        });
+            ['L', dimensions.canvas.w, 0], ['L', dimensions.canvas.w, dimensions.canvas.h],
+            ['L', 0, dimensions.canvas.h], ['L', 0, 0]
+        )).attr(styles.frame);
 
         return paper;
     };
@@ -88,7 +98,6 @@
             animate.running = false;
             return;
         }
-        var delta = -avatar.w * padding.w;
 
         processCommit(paper, commit, context);
         visible.push(commit);
@@ -102,7 +111,7 @@
         commit.avatar.animate({
             opacity: 1
         }, timeUnit / speed, function() {
-            moveCamera(avatar.w * padding.w);
+            moveCamera(dimensions.cell.w);
             moveViewport(function() {
                 if (!animate.paused) {
                     animate.callback();
@@ -162,7 +171,7 @@
         }
         // Draw avatar
         commit.avatar = paper.image(info.image, info.x, info.y, info.w, info.h)
-            .attr({ opacity: hiddenOpacity });
+            .attr({ opacity: styles.hiddenOpacity });
         avatars.push(commit.avatar);
 
         // Draw date if it changed
@@ -175,7 +184,7 @@
     };
 
     var render = function(paper, commits) {
-        moveCamera(commits[0].time * avatar.w * padding.w - canvas.w / 2);
+        moveCamera(commits[0].time * dimensions.cell.w - dimensions.canvas.w / 2);
         animate(paper, {
             idx: 0,
             commits: commits,
@@ -196,8 +205,8 @@
 
         world.translate(-delta, 0);
 
-        var minTime = (camera - 10) / (avatar.w * padding.w);
-        var maxTime = minTime + canvas.w / (avatar.w * padding.w);
+        var minTime = (camera - 10) / dimensions.cell.w;
+        var maxTime = minTime + dimensions.canvas.w / dimensions.cell.w;
 
         _.each(visible, function(commit) {
             var notVisible = commit.time < minTime || commit.time > maxTime;
@@ -215,14 +224,14 @@
     // Commit utils
     var commitInfo = function(commit) {
         var info = {
-            image: avatar.url + commit.gravatar,
-            x: commit.time * avatar.w * padding.w + offset.x - camera,
-            y: commit.space * avatar.h * padding.h + offset.y,
-            w: avatar.w,
-            h: avatar.h
+            image: 'https://secure.gravatar.com/avatar/' + commit.gravatar,
+            x: commit.time * dimensions.cell.w + dimensions.offset.x - camera,
+            y: commit.space * dimensions.cell.h + dimensions.offset.y,
+            w: dimensions.avatar.w,
+            h: dimensions.avatar.h
         };
-        info.cx = info.x + avatar.w / 2;
-        info.cy = info.y + avatar.h / 2;
+        info.cx = info.x + dimensions.avatar.w / 2;
+        info.cy = info.y + dimensions.avatar.h / 2;
         return info;
     };
 
@@ -236,16 +245,16 @@
 
     var branchPath = function(px, py, cx, cy, upDown) {
         return [
-            ['L', px, cy + borderRadio * upDown],
-            ['S', px, cy, px + borderRadio, cy],
+            ['L', px, cy + dimensions.borderRadius * upDown],
+            ['S', px, cy, px + dimensions.borderRadius, cy],
             ['L', cx, cy]
         ];
     };
 
     var mergePath = function(px, py, cx, cy, upDown) {
         return [
-            ['L', cx - borderRadio, py],
-            ['S', cx, py, cx, py + borderRadio * upDown],
+            ['L', cx - dimensions.borderRadius, py],
+            ['S', cx, py, cx, py + dimensions.borderRadius * upDown],
             ['L', cx, cy]
         ];
     };
@@ -255,16 +264,19 @@
         // Horizontal
         if (_.isUndefined(upDown)) {
             result.push(
-                ['M', x, y, x - arrow.h, y - arrow.w / 2, x - arrow.h, y + arrow.w / 2],
+                ['M', x, y, x - dimensions.arrow.h, y - dimensions.arrow.w / 2,
+                    x - dimensions.arrow.h, y + dimensions.arrow.w / 2],
                 ['Z']
             );
 
         // Vertical
         } else {
             result.push(
-                ['M', x, y + avatar.h / 2 * upDown,
-                    x - arrow.w / 2, y + (avatar.h / 2 + arrow.h) * upDown,
-                    x + arrow.w / 2, y + (avatar.h / 2 + arrow.h) * upDown],
+                ['M', x, y + dimensions.avatar.h / 2 * upDown,
+                    x - dimensions.arrow.w / 2, y +
+                        (dimensions.avatar.h / 2 + dimensions.arrow.h) * upDown,
+                    x + dimensions.arrow.w / 2, y +
+                        (dimensions.avatar.h / 2 + dimensions.arrow.h) * upDown],
                 ['Z']
             );
         }
@@ -273,13 +285,13 @@
 
     var drawDate = function(date, x, time, paper) {
         var day = paper.text(
-            x, headerHeight * 3 / 7, date.getDate()
-        ).attr({ fill: 'black', font: '12px Arial', 'font-weight': 'bold' });
+            x, dimensions.day.h, date.getDate()
+        ).attr(styles.day);
         dates.push(day);
 
         var month = paper.text(
-            x, headerHeight * 5 / 7, months[date.getMonth()]
-        ).attr({ fill: 'black', font: '6px Arial' });
+            x, dimensions.month.h, months[date.getMonth()]
+        ).attr(styles.month);
         dates.push(month);
 
         visible.push({
@@ -295,9 +307,11 @@
 
     var initCanvas = function() {
         var $canvas = $('#canvas');
-        canvas.w = $canvas.width();
-        canvas.h = $(window).height() - $('body').height() -
-            parseInt($canvas.css('paddingTop').replace('px', ''), 10);
+        dimensions.canvas = {
+            w: $canvas.width(),
+            h: $(window).height() - $('body').height() -
+                parseInt($canvas.css('paddingTop').replace('px', ''), 10)
+        };
     };
 
     var initRepoControls = function() {
@@ -337,10 +351,10 @@
 
     var controls = {
         moveLeft: function() {
-            moveCamera(-avatar.w * padding.w * 2);
+            moveCamera(-dimensions.cell.w * 2);
         },
         moveRight: function() {
-            moveCamera(avatar.w * padding.w * 2);
+            moveCamera(dimensions.cell.w * 2);
         },
         increaseSpeed: function(factor) {
             factor = factor || 1.5;
