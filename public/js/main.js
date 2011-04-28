@@ -20,6 +20,7 @@
 
     var render = function() {
         canvas.drawBackdrop();
+        camera.reset();
         camera.move(repo.commits[0].time * dimensions.cell.w - dimensions.canvas.w / 2);
         animate({ idx: 0, currentDate: null });
     };
@@ -40,7 +41,7 @@
 
         context.commits = repo.commits;
         commits.process(commit, context);
-        canvas.visible().push(commit);
+        canvas.addVisible(commit);
 
         _.each(commit.parents, function(parent) {
             parent.connection.animate({
@@ -134,8 +135,10 @@
             }
         });
         // Get commit history
+        // TODO: trigger with <Return>
         $('#play').click(function(e) {
             e.preventDefault();
+            repo = {};
             repo.url = $('#repo').val();
 
             if (repo.url && repo.url.length > 0) {
