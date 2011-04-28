@@ -8,9 +8,7 @@
     var dimensions = {
         header: { h: 30 },
         padding: { w: 2, h: 1.75 },
-        avatar: { w: 15, h: 15 },
-        arrow: { w: 4, h: 10 },
-        borderRadius: 5
+        avatar: { w: 15, h: 15 }
     };
     _.extend(dimensions, {
         offset: { x: 10, y: 10 + dimensions.header.h },
@@ -55,7 +53,6 @@
     // GitHub data
     var repo = {};
 
-
     var renderBackdrop = function() {
         var paper = Raphael('canvas', dimensions.canvas.w, dimensions.canvas.h);
 
@@ -75,7 +72,7 @@
             .attr(styles.header);
 
         // Frame
-        var frame = paper.path(createPath(
+        var frame = paper.path(paths.create(
             ['M', 0, 0],
             ['L', dimensions.canvas.w, 0], ['L', dimensions.canvas.w, dimensions.canvas.h],
             ['L', 0, dimensions.canvas.h], ['L', 0, 0]
@@ -140,18 +137,18 @@
                     if (commit.space > parent.space) {
                         direction = -1;
                     }
-                    path.push.apply(path, branchPath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
+                    path.push.apply(path, paths.branch(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
                     // Arrow
-                    path.push.apply(path, arrowPath(info.x, info.cy));
+                    path.push.apply(path, paths.arrow(info.x, info.cy));
 
                     // merge into parent branch
                 } else if (commit.space !== parent.space) {
                     if (commit.space < parent.space) {
                         direction = -1;
                     }
-                    path.push.apply(path, mergePath(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
+                    path.push.apply(path, paths.merge(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
                     // Arrow
-                    path.push.apply(path, arrowPath(info.cx, info.cy, -direction));
+                    path.push.apply(path, paths.arrow(info.cx, info.cy, -direction));
                     branchSpace = parent.space;
 
                     // just another commit on same branch
@@ -159,7 +156,7 @@
                     path.push(['L', info.cx, info.cy]);
                 }
 
-                parent.connection = paper.path(createPath.apply(null, path))
+                parent.connection = paper.path(paths.create.apply(null, path))
                     .attr(styles.branchStyles[branchSpace]);
 
                 // Parent avatar to front
@@ -232,54 +229,6 @@
         info.cx = info.x + dimensions.avatar.w / 2;
         info.cy = info.y + dimensions.avatar.h / 2;
         return info;
-    };
-
-    // Drawing utils
-    var createPath = function() {
-        return _(arguments).chain()
-            .map(function(move) {
-                return [ move[0], move.slice(1).join(',') ];
-            }).flatten().value().join('');
-    };
-
-    var branchPath = function(px, py, cx, cy, upDown) {
-        return [
-            ['L', px, cy + dimensions.borderRadius * upDown],
-            ['S', px, cy, px + dimensions.borderRadius, cy],
-            ['L', cx, cy]
-        ];
-    };
-
-    var mergePath = function(px, py, cx, cy, upDown) {
-        return [
-            ['L', cx - dimensions.borderRadius, py],
-            ['S', cx, py, cx, py + dimensions.borderRadius * upDown],
-            ['L', cx, cy]
-        ];
-    };
-
-    var arrowPath = function(x, y, upDown) {
-        var result = [];
-        // Horizontal
-        if (_.isUndefined(upDown)) {
-            result.push(
-                ['M', x, y, x - dimensions.arrow.h, y - dimensions.arrow.w / 2,
-                    x - dimensions.arrow.h, y + dimensions.arrow.w / 2],
-                ['Z']
-            );
-
-        // Vertical
-        } else {
-            result.push(
-                ['M', x, y + dimensions.avatar.h / 2 * upDown,
-                    x - dimensions.arrow.w / 2, y +
-                        (dimensions.avatar.h / 2 + dimensions.arrow.h) * upDown,
-                    x + dimensions.arrow.w / 2, y +
-                        (dimensions.avatar.h / 2 + dimensions.arrow.h) * upDown],
-                ['Z']
-            );
-        }
-        return result;
     };
 
     var drawDate = function(date, x, time, paper) {
