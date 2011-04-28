@@ -63,11 +63,10 @@
         }
     };
 
+    var camera = { x: 0, y: 0 };
+
     // Sets
     var world, avatars, branches, dates, visible = [];
-
-    // Camera
-    var camera = 0;
 
     // GitHub data
     var repo = {};
@@ -209,19 +208,19 @@
     };
 
     var moveCamera = function(delta, callback) {
-        camera += delta;
+        camera.x += delta;
         if (!animate.running || animate.paused) {
             moveViewport(callback);
         }
     };
 
     var moveViewport = function(callback) {
-        var delta = camera - moveViewport.camera || 0;
-        moveViewport.camera = camera;
+        var delta = camera.x - moveViewport.camera || 0;
+        moveViewport.camera = camera.x;
 
         world.translate(-delta, 0);
 
-        var minTime = (camera - 10) / dimensions.cell.w;
+        var minTime = (camera.x - 10) / dimensions.cell.w;
         var maxTime = minTime + dimensions.canvas.w / dimensions.cell.w;
 
         _.each(visible, function(commit) {
@@ -241,7 +240,7 @@
     var commitInfo = function(commit) {
         var info = {
             image: 'https://secure.gravatar.com/avatar/' + commit.gravatar,
-            x: commit.time * dimensions.cell.w + dimensions.offset.x - camera,
+            x: commit.time * dimensions.cell.w + dimensions.offset.x - camera.x,
             y: commit.space * dimensions.cell.h + dimensions.offset.y,
             w: dimensions.avatar.w,
             h: dimensions.avatar.h
