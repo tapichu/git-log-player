@@ -30,21 +30,6 @@
     };
     styles.branchStyles = util.createBranchStyles(1000);
 
-    var animations = {
-        timeUnit: 200,
-        speed: 1,
-        delta: 1.5,
-        duration: function() {
-            return this.timeUnit / this.speed;
-        },
-        faster: function(factor) {
-            this.speed = this.speed * this.delta;
-        },
-        slower: function(factor) {
-            this.speed = this.speed / this.delta;
-        }
-    };
-
     var camera = { x: 0, y: 0 };
 
     // Sets
