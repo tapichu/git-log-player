@@ -56,19 +56,19 @@ window.commits = (function(_, undefined) {
                     path.push(['L', info.cx, info.cy]);
                 }
 
-                parent.connection = canvas.get().path(paths.create.apply(null, path))
+                parent.connection = canvas.newPath(paths.create.apply(null, path))
                     .attr(branchStyles[branchSpace]);
 
                 // Parent avatar to front
                 context.commits[parent.time].avatar.toFront();
 
-                canvas.sets().branches.push(parent.connection);
+                canvas.addBranch(parent.connection);
             });
         }
         // Draw avatar
-        commit.avatar = canvas.get().image(info.image, info.x, info.y, info.w, info.h)
+        commit.avatar = canvas.newImage(info.image, info.x, info.y, info.w, info.h)
             .attr({ opacity: hiddenOpacity });
-        canvas.sets().avatars.push(commit.avatar);
+        canvas.addAvatar(commit.avatar);
 
         // Draw date if it changed
         var cd = new Date(commit.date);

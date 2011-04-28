@@ -75,21 +75,33 @@ window.canvas = (function(Raphael, undefined) {
             element = element || 'canvas';
             createCanvas(element);
         },
-        get: function() {
-            return paper;
-        },
-        sets: function() {
-            return sets;
-        },
-        visible: function() {
-            return visible;
-        },
         drawBackdrop: function() {
             this.create();
             renderBackdrop();
         },
         drawDate: function(date, x, time) {
             drawDate(date, x, time);
+        },
+        addAvatar: function(avatar) {
+            sets.avatars.push(avatar);
+        },
+        addBranch: function(branch) {
+            sets.branches.push(branch);
+        },
+        addVisible: function(v) {
+            visible.push(v);
+        },
+        getVisible: function() {
+            return visible;
+        },
+        getWorld: function() {
+            return sets.world;
+        },
+        newPath: function(path) {
+            return paper.path(path);
+        },
+        newImage: function(image, x, y, w, h) {
+            return paper.image(image, x, y, w, h);
         }
     };
 
