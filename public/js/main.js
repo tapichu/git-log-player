@@ -1,11 +1,6 @@
 (function($, undefined) {
 
-    var months = [
-        'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG',
-        'SEP', 'OCT', 'NOV', 'DEC'
-    ];
-
-    var dimensions = {
+    var dimensions = window.dimensions = {
         header: { h: 30 },
         padding: { w: 2, h: 1.75 },
         avatar: { w: 15, h: 15 }
@@ -20,53 +15,10 @@
         month: { h: dimensions.header.h * 5 / 7 }
     });
 
-    var styles = {
-        hiddenOpacity: 0,
-        background: { fill: '#F2F2F2', stroke: 'none' },
-        header: { fill: '#CCC', stroke: 'none' },
-        frame: { stroke: '#BBB', 'stroke-width': 1 },
-        day: { fill: 'black', font: '12px Arial', 'font-weight': 'bold' },
-        month: { fill: 'black', font: '6px Arial' }
-    };
-    styles.branchStyles = util.createBranchStyles(1000);
-
-    var camera = { x: 0, y: 0 };
-
-    // Sets
-    var world, avatars, branches, dates, visible = [];
-
     // GitHub data
     var repo = {};
 
-    var renderBackdrop = function() {
-        var paper = Raphael('canvas', dimensions.canvas.w, dimensions.canvas.h);
-
-        world = paper.set(),
-        world.push(
-            avatars = paper.set(),
-            branches = paper.set(),
-            dates = paper.set()
-        );
-
-        // Cavas background
-        var background = paper.rect(0, 0, dimensions.canvas.w, dimensions.canvas.h)
-            .attr(styles.background);
-
-        // Dates header
-        var header = paper.rect(0, 0, dimensions.canvas.w, dimensions.header.h)
-            .attr(styles.header);
-
-        // Frame
-        var frame = paper.path(paths.create(
-            ['M', 0, 0],
-            ['L', dimensions.canvas.w, 0], ['L', dimensions.canvas.w, dimensions.canvas.h],
-            ['L', 0, dimensions.canvas.h], ['L', 0, 0]
-        )).attr(styles.frame);
-
-        return paper;
-    };
-
-    var animate = function(paper, context) {
+    var animate = window.animate = function(paper, context) {
         animate.running = true;
         animate.paused = false;
         animate.callback = function() {
@@ -80,8 +32,8 @@
             return;
         }
 
-        processCommit(paper, commit, context);
-        visible.push(commit);
+        commits.process(paper, commit, context);
+        canvas.visible().push(commit);
 
         _.each(commit.parents, function(parent) {
             parent.connection.animate({
@@ -92,8 +44,8 @@
         commit.avatar.animate({
             opacity: 1
         }, animations.duration(), function() {
-            moveCamera(dimensions.cell.w);
-            moveViewport(function() {
+            camera.move(dimensions.cell.w);
+            camera.moveWorld(function() {
                 if (!animate.paused) {
                     animate.callback();
                 }
@@ -101,138 +53,12 @@
         });
     };
 
-    var processCommit = function(paper, commit, context) {
-        var info = commitInfo(commit);
-        // Draw path
-        if (commit.parents.length > 0) {
-            _.each(commit.parents, function(pData, pIdx) {
-                var parent = commit.parents[pIdx] = {
-                    id: pData[0],
-                    time: pData[1],
-                    space: pData[2],
-                };
-                var pInfo = commitInfo(parent, commit.time - parent.time);
-
-                var path = [['M', pInfo.cx, pInfo.cy]];
-                var direction = 1;
-                var branchSpace = commit.space;
-
-                // first commit on new branch
-                if (commit.parents.length === 1 && commit.space !== parent.space) {
-                    if (commit.space > parent.space) {
-                        direction = -1;
-                    }
-                    path.push.apply(path, paths.branch(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
-                    // Arrow
-                    path.push.apply(path, paths.arrow(info.x, info.cy));
-
-                    // merge into parent branch
-                } else if (commit.space !== parent.space) {
-                    if (commit.space < parent.space) {
-                        direction = -1;
-                    }
-                    path.push.apply(path, paths.merge(pInfo.cx, pInfo.cy, info.cx, info.cy, direction));
-                    // Arrow
-                    path.push.apply(path, paths.arrow(info.cx, info.cy, -direction));
-                    branchSpace = parent.space;
-
-                    // just another commit on same branch
-                } else {
-                    path.push(['L', info.cx, info.cy]);
-                }
-
-                parent.connection = paper.path(paths.create.apply(null, path))
-                    .attr(styles.branchStyles[branchSpace]);
-
-                // Parent avatar to front
-                context.commits[parent.time].avatar.toFront();
-
-                branches.push(parent.connection);
-            });
-        }
-        // Draw avatar
-        commit.avatar = paper.image(info.image, info.x, info.y, info.w, info.h)
-            .attr({ opacity: styles.hiddenOpacity });
-        avatars.push(commit.avatar);
-
-        // Draw date if it changed
-        var cd = new Date(commit.date);
-        cd = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
-        if (!context.currentDate || cd > context.currentDate) {
-            context.currentDate = cd;
-            drawDate(context.currentDate, info.cx, commit.time, paper);
-        }
-    };
-
     var render = function(paper, commits) {
-        moveCamera(commits[0].time * dimensions.cell.w - dimensions.canvas.w / 2);
+        camera.move(commits[0].time * dimensions.cell.w - dimensions.canvas.w / 2);
         animate(paper, {
             idx: 0,
             commits: commits,
             currentDate: null
-        });
-    };
-
-    var moveCamera = function(delta, callback) {
-        camera.x += delta;
-        if (!animate.running || animate.paused) {
-            moveViewport(callback);
-        }
-    };
-
-    var moveViewport = function(callback) {
-        var delta = camera.x - moveViewport.camera || 0;
-        moveViewport.camera = camera.x;
-
-        world.translate(-delta, 0);
-
-        var minTime = (camera.x - 10) / dimensions.cell.w;
-        var maxTime = minTime + dimensions.canvas.w / dimensions.cell.w;
-
-        _.each(visible, function(commit) {
-            var notVisible = commit.time < minTime || commit.time > maxTime;
-            if(notVisible) {
-                if(commit.avatar) { commit.avatar.remove(); }
-                _.each(commit.parents, function(parent) {
-                    parent.connection.remove(); 
-                });
-            }
-        });
-
-        if (callback) { callback(); }
-    };
-
-    // Commit utils
-    var commitInfo = function(commit) {
-        var info = {
-            image: 'https://secure.gravatar.com/avatar/' + commit.gravatar,
-            x: commit.time * dimensions.cell.w + dimensions.offset.x - camera.x,
-            y: commit.space * dimensions.cell.h + dimensions.offset.y,
-            w: dimensions.avatar.w,
-            h: dimensions.avatar.h
-        };
-        info.cx = info.x + dimensions.avatar.w / 2;
-        info.cy = info.y + dimensions.avatar.h / 2;
-        return info;
-    };
-
-    var drawDate = function(date, x, time, paper) {
-        var day = paper.text(
-            x, dimensions.day.h, date.getDate()
-        ).attr(styles.day);
-        dates.push(day);
-
-        var month = paper.text(
-            x, dimensions.month.h, months[date.getMonth()]
-        ).attr(styles.month);
-        dates.push(month);
-
-        visible.push({
-            time: time,
-            parents: [
-                { connection: day },
-                { connection: month },
-            ]
         });
     };
 
@@ -278,16 +104,17 @@
         // TODO: do this in chunks
         $.getJSON('proxy?path=/' + url + '/network_data_chunk?nethash=' +
                   nethash + '&start=0&end=' + numCommits, function(chunk) {
-            render(renderBackdrop(), chunk.commits);
+            canvas.drawBackdrop();
+            render(canvas.get(), chunk.commits);
         });
     };
 
     var controls = {
         moveLeft: function() {
-            moveCamera(-dimensions.cell.w * 2);
+            camera.move(-dimensions.cell.w * 2);
         },
         moveRight: function() {
-            moveCamera(dimensions.cell.w * 2);
+            camera.move(dimensions.cell.w * 2);
         },
         togglePlay: function() {
             if (animate.paused) {
