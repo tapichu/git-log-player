@@ -21,6 +21,14 @@ app.configure('production', function() {
     app.use(express.errorHandler());
 });
 
+app.get('/static/*', function(req, res) {
+    res.sendfile(__dirname + '/public/' + req.params[0]);
+});
+
+app.get('/:user/:repo', function(req, res) {
+    res.sendfile(__dirname + '/public/index.html');
+});
+
 // GitHub proxy
 app.get('/proxy', function(request, response) {
     response.contentType('application/json');

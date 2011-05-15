@@ -63,7 +63,7 @@
 
     // Get repository metadata from GitHub
     var getRepoMeta = function(url) {
-        $.getJSON('proxy?path=/' + url + '/network_meta', function(meta) {
+        $.getJSON('/proxy?path=/' + url + '/network_meta', function(meta) {
             repo.meta = meta;
             startAnimation(url, meta.nethash, meta.dates.length - 1);
         });
@@ -72,7 +72,7 @@
     // Get the commits from GitHub and start the animation
     var startAnimation = function(url, nethash, numCommits) {
         // TODO: do this in chunks
-        $.getJSON('proxy?path=/' + url + '/network_data_chunk?nethash=' +
+        $.getJSON('/proxy?path=/' + url + '/network_data_chunk?nethash=' +
                   nethash + '&start=0&end=' + numCommits, function(chunk) {
             repo.commits = chunk.commits;
             render();
