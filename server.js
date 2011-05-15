@@ -8,16 +8,18 @@ app.configure(function() {
     app.use(express.methodOverride());
     app.use(express.bodyParser());
     app.use(app.router);
+
+    app.set('view engine', 'ejs');
+    app.set('view options', {
+        layout: false
+    });
 });
 
 app.configure('development', function() {
-    app.use(express.static(__dirname + '/public'));
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
 app.configure('production', function() {
-    var oneYear = 31557600000;
-    app.use(express.static(__dirname + '/public', { maxAge: oneYear }));
     app.use(express.errorHandler());
 });
 
@@ -25,8 +27,20 @@ app.get('/static/*', function(req, res) {
     res.sendfile(__dirname + '/public/' + req.params[0]);
 });
 
+app.get('/', function(req, res) {
+    res.render('index', {
+        title: '',
+        user: 'user',
+        repo: 'repo'
+    });
+});
+
 app.get('/:user/:repo', function(req, res) {
-    res.sendfile(__dirname + '/public/index.html');
+    res.render('index', {
+        title: ' - ' + req.params.user + '/' + req.params.repo,
+        user: req.params.user,
+        repo: req.params.repo
+    });
 });
 
 // GitHub proxy

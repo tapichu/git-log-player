@@ -7,7 +7,7 @@
         <meta name="author" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <title>Git Animated History</title>
+        <title>Git Log Player<%= title %></title>
 
         <link rel="stylesheet" href="/static/css/style.css"></link>
 
@@ -42,7 +42,7 @@
         <div class="header">
             <div id="github_repo" class="auto right">
                 https://github.com/
-                <input type="text" id="repo" value="user/repo" class="input_param">
+                <input type="text" id="repo" value="<%= user %>/<%= repo %>" class="input_param">
                 <input type="button" id="play" value="Play" class="button">
             </div>
             <div id="main_header">
