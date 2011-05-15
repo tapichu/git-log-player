@@ -122,13 +122,13 @@
     };
 
     var initRepoControls = function() {
-        $('.input_param').focusin(function(e) {
+        $('#repo').focusin(function(e) {
             e.preventDefault();
             if ($(this).val() === 'user/repo') {
                 $(this).val('');
             }
         });
-        $('.input_param').focusout(function(e) {
+        $('#repo').focusout(function(e) {
             e.preventDefault();
             if ($(this).val() === '') {
                 $(this).val('user/repo');
@@ -138,10 +138,11 @@
         // TODO: trigger with <Return>
         $('#play').click(function(e) {
             e.preventDefault();
-            repo = {};
-            repo.url = $('#repo').val();
+            var repoUrl = $('#repo').val();
 
-            if (repo.url && repo.url.length > 0) {
+            if (util.isValidRepo(repoUrl)) {
+                repo = {};
+                repo.url = repoUrl;
                 getRepoMeta(repo.url);
             }
         });
@@ -220,6 +221,12 @@
         initRepoControls();
         initKeyboardControls();
         initToolbarControls();
+
+        // Play automatically when the URL points to a repo
+        var repoUrl = $('.input_param').val();
+        if (util.isValidRepo(repoUrl)) {
+            $('#play').click();
+        }
     });
 
 }(jQuery));

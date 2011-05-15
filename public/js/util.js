@@ -17,10 +17,17 @@ window.util = (function(undefined) {
         return colors;
     };
 
+    var isValidRepoUrl = function(url) {
+        return url && /\w+\/\w+/.test(url) && url !== 'user/repo';
+    };
+
     return {
         createBranchStyles: function(num) {
             num = num || 100;
             return createStyles(num);
+        },
+        isValidRepo: function(url) {
+            return isValidRepoUrl(url);
         }
     };
 
