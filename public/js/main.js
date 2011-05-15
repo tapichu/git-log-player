@@ -21,7 +21,8 @@
     var render = function() {
         canvas.drawBackdrop();
         camera.reset();
-        camera.move(repo.commits[0].time * dimensions.cell.w - dimensions.canvas.w / 2);
+        // Start drawing 4 commits to the left of the right hand side of the canvas
+        camera.move(repo.commits[4].time * dimensions.cell.w - dimensions.canvas.w);
         animate({ idx: 0, currentDate: null });
     };
 
