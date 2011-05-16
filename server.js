@@ -35,6 +35,25 @@ app.get('/', function(req, res) {
     });
 });
 
+var githubRequest = function(path, req, res) {
+    console.log('Making request to GitHub: %s', path);
+
+    res.contentType('application/json');
+
+    https.get({ host: 'github.com', path: path }, function(response) {
+        console.log('GitHub replied with status code: %s', response.statusCode);
+
+        response.on('data', function(data) {
+            res.write(data);
+        }).on('end', function() {
+            res.end();
+        });
+
+    }).on('error', function(e) {
+        console.log('Got error from GitHub: %s', e.message);
+    });
+};
+
 app.get('/:user/:repo', function(req, res) {
     res.render('index', {
         title: ' - ' + req.params.user + '/' + req.params.repo,
@@ -43,26 +62,28 @@ app.get('/:user/:repo', function(req, res) {
     });
 });
 
-// GitHub proxy
-app.get('/proxy', function(request, response) {
-    response.contentType('application/json');
+app.get('/api/meta/:user/:repo', function(req, res) {
+    console.log('Making network meta request to GitHub: %s/%s',
+        req.params.user, req.params.repo
+    );
 
-    var path = request.url.substring(12);
-    console.log('Making request to GitHub: %s', path);
+    githubRequest(
+        '/' + req.params.user + '/' + req.params.repo + '/network_meta',
+        req, res
+    );
+});
 
-    https.get({ host: 'github.com', path: path }, function(res) {
-        console.log('GitHub replied with status code: %s', res.statusCode);
+app.get('/api/data/:user/:repo/:nethash/:commits', function(req, res) {
+    console.log('Making network data request to GitHub: %s/%s',
+        req.params.user, req.params.repo
+    );
 
-        res.on('data', function(data) {
-            response.write(data);
-        }).on('end', function() {
-            response.end();
-        });
-
-    }).on('error', function(e) {
-        console.log('Got error from GitHub: %s', e.message);
-    });
-
+    githubRequest(
+        '/' + req.params.user + '/' + req.params.repo +
+            '/network_data_chunk?nethash=' + req.params.nethash +
+            '&start=0&end=' + req.params.commits,
+        req, res
+    );
 });
 
 app.listen(process.env.PORT || 8000);
