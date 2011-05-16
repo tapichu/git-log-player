@@ -3,19 +3,26 @@ window.camera = (function(_, undefined) {
     var camera = { x: 0, y: 0 },
         world = { x: 0, y: 0 };
 
-    var moveCamera = function(delta, callback) {
-        camera.x += delta;
+    var moveCamera = function(xDelta, yDelta, callback) {
+        camera.x += xDelta;
+        camera.y += yDelta;
+        if (camera.y < 0) { camera.y = 0; }
+
         if (!animate.running || animate.paused) {
             moveWorld(callback);
         }
     };
 
     var moveWorld = function(callback) {
-        var delta = camera.x - world.x;
+        var xDelta = camera.x - world.x;
+        var yDelta = camera.y - world.y;
         world.x = camera.x;
+        world.y = camera.y;
 
-        canvas.getWorld().translate(-delta, 0);
+        canvas.getWorld().translate(-xDelta, -yDelta);
 
+        // Remove elements not visible
+        // checking the x-axis should be enough
         var minTime = (camera.x - 10) / dimensions.cell.w;
         var maxTime = minTime + dimensions.canvas.w / dimensions.cell.w;
 
@@ -42,8 +49,14 @@ window.camera = (function(_, undefined) {
         y: function() {
             return camera.y;
         },
-        move: function(delta, callback) {
-            moveCamera(delta, callback);
+        moveHor: function(delta, callback) {
+            moveCamera(delta, 0, callback);
+        },
+        moveVer: function(delta, callback) {
+            moveCamera(0, delta, callback);
+        },
+        move: function(xDelta, yDelta, callback) {
+            moveCamera(xDelta, yDelta, callback);
         },
         moveWorld: function(callback) {
             moveWorld(callback);

@@ -22,7 +22,7 @@
         canvas.drawBackdrop();
         camera.reset();
         // Start drawing 4 commits to the left of the right hand side of the canvas
-        camera.move(repo.commits[4].time * dimensions.cell.w - dimensions.canvas.w);
+        camera.moveHor(repo.commits[4].time * dimensions.cell.w - dimensions.canvas.w);
         animate({ idx: 0, currentDate: null });
     };
 
@@ -53,7 +53,7 @@
         commit.avatar.animate({
             opacity: 1
         }, animations.duration(), function() {
-            camera.move(dimensions.cell.w);
+            camera.moveHor(dimensions.cell.w);
             camera.moveWorld(function() {
                 if (!animate.paused) {
                     animate.callback();
@@ -90,10 +90,16 @@
     // Control playback and the camera
     var controls = {
         moveLeft: function() {
-            camera.move(-dimensions.cell.w * 2);
+            camera.moveHor(-dimensions.cell.w * 2);
         },
         moveRight: function() {
-            camera.move(dimensions.cell.w * 2);
+            camera.moveHor(dimensions.cell.w * 2);
+        },
+        moveUp: function() {
+            camera.moveVer(-dimensions.cell.h * 2);
+        },
+        moveDown: function() {
+            camera.moveVer(dimensions.cell.h * 2);
         },
         faster: function() {
             animations.faster();
@@ -152,23 +158,31 @@
         $(document).bind('keydown', function(e) {
             var key = e.keyCode || e.which;
             // Left
-            if (key == '37') {
+            if (key === 37) {
                 controls.moveLeft();
             }
+            // Up
+            else if (key === 38) {
+                controls.moveUp();
+            }
             // Right
-            else if (key == '39') {
+            else if (key === 39) {
                 controls.moveRight();
             }
+            // Down
+            else if (key === 40) {
+                controls.moveDown();
+            }
             // Increase speed (plus)
-            else if ((key == '107' || key == '187') && animate.running) {
+            else if ((key === 107 || key === 187) && animate.running) {
                 controls.faster();
             }
             // Decrease speed (minus)
-            else if ((key == '109' || key == '189') && animate.running) {
+            else if ((key === 109 || key === 189) && animate.running) {
                 controls.slower();
             }
             // Play / Pause
-            else if (key == '32' && animate.running) {
+            else if (key === 32 && animate.running) {
                 controls.togglePlay();
             }
         });

@@ -7,7 +7,7 @@ window.commits = (function(_, undefined) {
         var info = {
             image: 'https://secure.gravatar.com/avatar/' + commit.gravatar,
             x: commit.time * dimensions.cell.w + dimensions.offset.x - camera.x(),
-            y: commit.space * dimensions.cell.h + dimensions.offset.y,
+            y: commit.space * dimensions.cell.h + dimensions.offset.y - camera.y(),
             w: dimensions.avatar.w,
             h: dimensions.avatar.h
         };
