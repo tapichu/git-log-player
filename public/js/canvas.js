@@ -1,8 +1,10 @@
 window.canvas = (function(Raphael, undefined) {
 
     var paper = null,
-        sets = {},
-        visible;
+        header,
+        dates,
+        visible,
+        sets = {};
 
     var styles = {
         background: { fill: '#F2F2F2', stroke: 'none' },
@@ -27,9 +29,9 @@ window.canvas = (function(Raphael, undefined) {
         sets.world = paper.set(),
         sets.world.push(
             sets.avatars = paper.set(),
-            sets.branches = paper.set(),
-            sets.dates = paper.set()
+            sets.branches = paper.set()
         );
+        dates = paper.set();
         visible = [];
     };
 
@@ -39,7 +41,7 @@ window.canvas = (function(Raphael, undefined) {
             .attr(styles.background);
 
         // Dates header
-        var header = paper.rect(0, 0, dimensions.canvas.w, dimensions.header.h)
+        header = paper.rect(0, 0, dimensions.canvas.w, dimensions.header.h)
             .attr(styles.header);
 
         // Frame
@@ -54,12 +56,12 @@ window.canvas = (function(Raphael, undefined) {
         var day = paper.text(
             x, dimensions.day.h, date.getDate()
         ).attr(styles.day);
-        sets.dates.push(day);
+        dates.push(day);
 
         var month = paper.text(
             x, dimensions.month.h, months[date.getMonth()]
         ).attr(styles.month);
-        sets.dates.push(month);
+        dates.push(month);
 
         visible.push({
             time: time,
@@ -90,6 +92,12 @@ window.canvas = (function(Raphael, undefined) {
         },
         addVisible: function(v) {
             visible.push(v);
+        },
+        getDates: function() {
+            return dates;
+        },
+        getHeader: function() {
+            return header;
         },
         getVisible: function() {
             return visible;

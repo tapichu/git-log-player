@@ -20,6 +20,9 @@ window.camera = (function(_, undefined) {
         world.y = camera.y;
 
         canvas.getWorld().translate(-xDelta, -yDelta);
+        canvas.getDates().translate(-xDelta, 0);
+        canvas.getHeader().toFront();
+        canvas.getDates().toFront();
 
         // Remove elements not visible
         // checking the x-axis should be enough
