@@ -147,9 +147,7 @@
             var repoUrl = $('#repo').val();
 
             if (util.isValidRepo(repoUrl)) {
-                repo = {};
-                repo.url = repoUrl;
-                getRepoMeta(repo.url);
+                window.location = '/' + repoUrl;
             }
         });
     };
@@ -237,9 +235,11 @@
         initToolbarControls();
 
         // Play automatically when the URL points to a repo
-        var repoUrl = $('.input_param').val();
+        var repoUrl = $('#repo').val();
         if (util.isValidRepo(repoUrl)) {
-            $('#play').click();
+            repo = {};
+            repo.url = repoUrl;
+            getRepoMeta(repo.url);
         }
     });
 
