@@ -128,27 +128,33 @@
     };
 
     var initRepoControls = function() {
-        $('#repo').focusin(function(e) {
+        var $repo = $('#repo'),
+            $play = $('#play');
+
+        $repo.focusin(function(e) {
             e.preventDefault();
             if ($(this).val() === 'user/repo') {
                 $(this).val('');
             }
         });
-        $('#repo').focusout(function(e) {
+        $repo.focusout(function(e) {
             e.preventDefault();
             if ($(this).val() === '') {
                 $(this).val('user/repo');
             }
         });
         // Get commit history
-        // TODO: trigger with <Return>
-        $('#play').click(function(e) {
+        $play.click(function(e) {
             e.preventDefault();
             var repoUrl = $('#repo').val();
 
             if (util.isValidRepo(repoUrl)) {
                 window.location = '/' + repoUrl;
             }
+        });
+        $('form').submit(function(e) {
+            e.preventDefault();
+            $play.click();
         });
     };
 
